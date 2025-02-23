@@ -22,7 +22,7 @@
 VERSION_E Robot_Version = V33;//根据潜器版本调整，V30，V31，V32，V33
 
 // 静态实例化对象
-//static IMU imu;
+IMU imu;
 static Servo servo;
 static Servo_I2C servo_i2c;
 static Propeller_I2C propeller_i2c;
@@ -107,14 +107,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
             }
         }*/
     }
-    imu.ITHandle(GPIO_Pin);
+    IMU::imu.ITHandle(GPIO_Pin);
 }
 
-void DMA2_Stream0_IRQHandler(void){
-
-	imu.ITHandle();
-
-}
+// void DMA2_Stream0_IRQHandler(void){
+// 
+// 	IMU::imu.ITHandle();
+// 
+// }
 
 // 主函数入口
 int main(void)

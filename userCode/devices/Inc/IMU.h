@@ -163,7 +163,7 @@ public:
     void ITHandle(uint16_t GPIO_Pin);
     void ITHandle(void);
 
-    static IMU imu;
+		static IMU imu;
     
     IMU_Raw_Data_t rawData;
     IMU_Pro_Data_t proData;
