@@ -86,6 +86,7 @@ void PressureSensor::Handle()
             for (int i = 0; i < SENSOR_NUM; ++i)
             {
                 TCA_SetChannel(i);
+                // HAL_Delay(5);
                 Handle_single(i);     // 收集每个传感器数据
                 OutputData_single(i); // 串口发送传感器的数据
             }
@@ -96,11 +97,15 @@ void PressureSensor::Handle()
             for (int i = 0; i < SENSOR_NUM; ++i)
             {
                 TCA_SetChannel(i);
+                // HAL_Delay(5);
                 Handle_single(i); // 收集每个传感器数据
             }
         }
 
         CurrentID = (CurrentID + 1) % 4;
+        // CurrentID++;
+        // if (CurrentID >= 4)
+        //     CurrentID = 0;
     }
     
     /*

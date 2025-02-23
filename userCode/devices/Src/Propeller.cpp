@@ -8,24 +8,29 @@ extern IMU imu;
 // V30
 int32_t InID_V30[4] = {1, 2, 6, 5};  // 内部的4个轮，左前-左后-右前-右后
 int32_t OutID_V30[4] = {3, 0, 7, 4}; // 外部的4个轮，左前-左后-右前-右后
-int32_t InitPWM_V30 = 1620;
+int32_t InitPWM_V30 = 1640;
+int32_t Deadband_V30 = 120;
 int32_t PWM_V30[7][4] = {
-    {1580, 1600, 1590, 1595}, // Base
-    {1450, 1460, 1600, 1600}, // Front
-    {1600, 1600, 1460, 1470}, // Back
-    {1590, 1455, 1600, 1455}, // Left
-    {1465, 1590, 1460, 1600}, // Right
-    {1475, 1475, 1475, 1475}, // ClockWise
-    {1585, 1585, 1585, 1585}  // AntiClockWise
+    {InitPWM_V30, InitPWM_V30, InitPWM_V30, InitPWM_V30}, // Base
+		{InitPWM_V30 - 100, InitPWM_V30 - 100, InitPWM_V30 + 100, InitPWM_V30 + 100}, // Front
+    {InitPWM_V30 + 100, InitPWM_V30 + 100, InitPWM_V30 - 100, InitPWM_V30 - 100}, // Back
+    {InitPWM_V30 + 100, InitPWM_V30 - 100, InitPWM_V30 + 100, InitPWM_V30 - 100}, // Left
+    {InitPWM_V30 - 100, InitPWM_V30 + 100, InitPWM_V30 - 100, InitPWM_V30 + 100}, // Right
+    {InitPWM_V30 - 80, InitPWM_V30 - 80, InitPWM_V30 - 80, InitPWM_V30 - 80}, // ClockWise
+    {InitPWM_V30 + 80, InitPWM_V30 + 80, InitPWM_V30 + 80, InitPWM_V30 + 80}  // AntiClockWise
+    //{1450, 1460, 1600, 1600}, // Front
+    //{1600, 1600, 1460, 1470}, // Back
+    //{1590, 1455, 1600, 1455}, // Left
+    //{1465, 1590, 1460, 1600}, // Right
+    //{1475, 1475, 1475, 1475}, // ClockWise
+    //{1585, 1585, 1585, 1585}  // AntiClockWise
 };
 
 // 直接用构造函数
-// PID_Regulator_t(float kp, float ki, float kd, float pM, float iM, float dM, float oM)
 PID_Regulator_t DepthPID_V30(20, 0.005, 100, 100, 100, 100, 200);
 PID_Regulator_t PitchPID_V30(5, /*5*/ 0.04, 200, 100, 100, 100, 200);
 PID_Regulator_t RollPID_V30(2.5, /*2.5*/ 0.02, 100, 100, 100, 100, 200);
 PID_Regulator_t YawPID_V30(4, 0, 100, 30, 30, 30, 200);
-// PID_Regulator_t YawPID_V30(4, 0.005, 100, 100, 100, 100, 200);
 
 Propeller_Parameter_t Parameter_V30(InID_V30, OutID_V30, InitPWM_V30, PWM_V30, DepthPID_V30, PitchPID_V30, RollPID_V30, YawPID_V30);
 
@@ -81,7 +86,6 @@ int32_t PWM_V32[7][4] = {
 PID_Regulator_t DepthPID_V32(20, 0.015, 33, 100, 100, 100, 200);
 PID_Regulator_t PitchPID_V32(10, /*5*/ 0.03, 33, 100, 100, 100, 200);
 PID_Regulator_t RollPID_V32(2.5, /*2.5*/ 0.03, 33, 100, 100, 100, 200);
-
 // PID_Regulator_t DepthPID_V31(20, 0.005, 10, 100, 100, 100, 200);
 // PID_Regulator_t PitchPID_V31(40,/*5*/ 0.02, 300, 100, 100, 100, 200);
 // PID_Regulator_t RollPID_V31(20,/*2.5*/ 0.01, 150, 200, 100, 100, 200);
@@ -92,18 +96,26 @@ Propeller_Parameter_t Parameter_V32(InID_V32, OutID_V32, InitPWM_V32, PWM_V32, D
 
 // V33
 int32_t Sign_V33[8] = {1, -1, 1, 1, -1, -1, 1, -1}; // 推进器正反桨，正1反-1，序号为推进器序号
-int32_t InID_V33[4] = {1, 2, 6, 4};                 // 内部的4个轮序号，左前-左后-右前-右后
-int32_t OutID_V33[4] = {0, 3, 7, 5};                // 外部的4个轮序号，左前-左后-右前-右后
-int32_t InitPWM_V33 = 1560;
-int32_t Deadband_V33 = 100;
+
+//int32_t InID_V33[4] = {1, 2, 6, 4};                 // V33-0内部的4个推进器接到扩展板上的序号，左前-左后-右前-右后
+//int32_t OutID_V33[4] = {0, 3, 7, 5};                // V33-0外部的4个推进器接到扩展板上的序号，左前-左后-右前-右后
+int32_t InID_V33[4] = {1, 2, 6, 5};                 // V33-1,2内部的4个推进器接到扩展板上的序号，左前-左后-右前-右后
+int32_t OutID_V33[4] = {0, 3, 7, 4};                // V33-1,2外部的4个推进器接到扩展板上的序号，左前-左后-右前-右后
+// V33-0,1
+//int32_t InitPWM_V33 = 1610;
+//int32_t Deadband_V33 = 120;
+// V33-2
+int32_t InitPWM_V33 = 1540;
+int32_t Deadband_V33 = 120;
+
 int32_t PWM_V33[7][4] = {
     {InitPWM_V33, InitPWM_V33 - Sign_V33[InID_V33[1]] * 100, InitPWM_V33, InitPWM_V33 - Sign_V33[InID_V33[3]] * 90},                                                                                                                             // Base
-    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 100, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 100, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 100, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 100}, // Front
-    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 100, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 100, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 100, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 100}, // Back
-    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 100, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 100, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 100, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 100}, // Left
-    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 100, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 100, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 100, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 100}, // Right
-    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 80, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 80, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 80, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 80},     // ClockWise
-    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 80, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 80, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 80, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 80}      // AntiClockWise
+    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 90}, // Front
+    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 90}, // Back
+    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 90}, // Left
+    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 90}, // Right
+    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 70},     // ClockWise
+    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 70}      // AntiClockWise
 };
 
 // PID_Regulator_t DepthPID_V32(20, 0.005, 100, 100, 100, 100, 200);
@@ -113,12 +125,12 @@ int32_t PWM_V33[7][4] = {
 PID_Regulator_t DepthPID_V33(20, 0.015, 33, 100, 50, 50, 200);
 PID_Regulator_t PitchPID_V33(10, /*5*/ 0.03, 33, 50, 25, 25, 100);
 PID_Regulator_t RollPID_V33(2.5, /*2.5*/ 0.03, 33, 50, 25, 25, 100);
-
 // PID_Regulator_t DepthPID_V31(20, 0.005, 10, 100, 100, 100, 200);
 // PID_Regulator_t PitchPID_V31(40,/*5*/ 0.02, 300, 100, 100, 100, 200);
 // PID_Regulator_t RollPID_V31(20,/*2.5*/ 0.01, 150, 200, 100, 100, 200);
 
 PID_Regulator_t YawPID_V33(10, 0.0001, 50, 10, 100, 100, 300);
+// PID_Regulator_t YawPID_V33(30, 0.02, 1000, 100, 100, 100, 200);
 
 Propeller_Parameter_t Parameter_V33(InID_V33, OutID_V33, InitPWM_V33, PWM_V33, DepthPID_V33, PitchPID_V33, RollPID_V33, YawPID_V33);
 
@@ -140,7 +152,6 @@ void Propeller_I2C::Init()
         std::memcpy(&Parameter, &Parameter_V33, sizeof(Propeller_Parameter_t));
         break;
     }
-
     DepthPID.PIDInfo = Parameter.DepthPID_P;
     PitchPID.PIDInfo = Parameter.PitchPID_P;
     RollPID.PIDInfo = Parameter.RollPID_P;
@@ -165,7 +176,7 @@ void Propeller_I2C::Init()
     for (int i = 0; i < PROPELLER_NUM; ++i)
     {
         data[i] = Parameter.InitPWM;
-        //TODO：i为推进器在扩展版上的接口编号，根据接线修改，目前为0-7号
+        //------TODO：i为推进器在扩展版上的接口编号，根据接线修改，目前为0-7号
         PCA_Setpwm(i, 0, floor(data[i] * 4096 / 20000 + 0.5f));
     }
     /*data_receive[0] = 1500;
@@ -539,7 +550,7 @@ void Propeller_I2C::angle_ctrl()
 
 float Propeller_I2C::Component_Calc(float data)
 {
-    return (data > 0) ? data + 30 : data - 30;
+    return (data > 0) ? data + 30 : data - 30; // 老版本是+-60
 }
 
 // 死区为1450-1550

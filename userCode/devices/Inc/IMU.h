@@ -143,14 +143,12 @@ class IMU : public Device
     void transmit_peak();
     void float_to_str(float data);
     bool flag_Test;
-
     //温度控制
     PID tempPid;
     uint8_t first_temperate;
     uint32_t count_imu;
     void imu_temp_control(float temp);
     void IMU_temp_PWM(float pwm);
-
     //位移获取
     void record_accel(float _accel[3], float accel[3]);
     void get_velocity(float velocity[3],float _accel[3], float accel[3]);
@@ -164,6 +162,8 @@ public:
     void Receive();
     void ITHandle(uint16_t GPIO_Pin);
     void ITHandle(void);
+
+    static IMU imu;
     
     IMU_Raw_Data_t rawData;
     IMU_Pro_Data_t proData;

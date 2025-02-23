@@ -535,7 +535,11 @@
 
   <Group>
     <GroupName>Application/MDK-ARM</GroupName>
+<<<<<<< HEAD
     <tvExp>1</tvExp>
+=======
+    <tvExp>0</tvExp>
+>>>>>>> origin/master
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
