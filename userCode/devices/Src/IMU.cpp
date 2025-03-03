@@ -77,7 +77,7 @@ void IMU::Handle() {
     position.vy = position.velocity[1];
     position.xy = position.displace[1];
 
-    //if(flag_Test)
+    if(flag_Test) // 注释掉这个就是一直在测最大速度、加速度
         get_peak();
 
     if(count_imu >= 1000){
@@ -91,6 +91,7 @@ void IMU::Handle() {
     AHRS_out(quat_out, 0.001f, proData.gyro, proData.accel_AHRS, rawData.mag);
 
     get_angle(quat_update, &attitude.yaw, &attitude.pitch, &attitude.rol);
+    OutputDataUpdate();
 
     attitude.yaw_v = proData.gyro[2];
     attitude.pitch_v = proData.gyro[0];
@@ -105,6 +106,7 @@ void IMU::Receive(){
     if (strncmp((char*)RxBuffer, "BEG", 3) == 0) {
         flag_Test = true;
     }
+
     if (strncmp((char*)RxBuffer, "END", 3) == 0) {
         flag_Test = false;
         transmit_peak();
@@ -112,6 +114,10 @@ void IMU::Receive(){
             accel_peak[i] = 0;
             velocity_peak[i] = 0;
         }
+    }
+
+    if (strncmp((char*)RxBuffer, "IVA", 3) == 0){
+        OutputAngleValue();
     }
 }
 
@@ -362,7 +368,7 @@ void IMU::get_displace(float displace[3], float _velocity[3], float velocity[3])
 }
 
 /**
- * @brief 数据处理
+ * @brief 测得陀螺仪和加速度计零偏值，存入rawData.accel_offset和rawData.gyro_offset数组
  * @param accel
  * @param _accel
  */
@@ -496,20 +502,23 @@ void IMU::float_to_str(float data){
 }
 
 void IMU::get_peak(){
-    if(position._accel[0]>accel_peak[0]) accel_peak[0] = position._accel[0];
-    if(-position._accel[0]>accel_peak[1]) accel_peak[1] = -position._accel[0];
-    if(position._accel[1]>accel_peak[2]) accel_peak[2] = position._accel[1];
-    if(-position._accel[1]>accel_peak[3]) accel_peak[3] = -position._accel[1];
-    if(position._accel[2]>accel_peak[4]) accel_peak[4] = position._accel[2];
-    if(-position._accel[2]>accel_peak[5]) accel_peak[5] = -position._accel[2];
-    if(position._velocity[0]>velocity_peak[0]) velocity_peak[0] = position._accel[0];
-    if(-position._velocity[0]>velocity_peak[1]) velocity_peak[1] = -position._accel[0];
-    if(position._velocity[1]>velocity_peak[2]) velocity_peak[2] = position._accel[1];
-    if(-position._velocity[1]>velocity_peak[3]) velocity_peak[3] = -position._accel[1];
-    if(position._velocity[2]>velocity_peak[4]) velocity_peak[4] = position._accel[2];
-    if(-position._velocity[2]>velocity_peak[5]) velocity_peak[5] = -position._accel[2];
+    if(position._accel[0] > accel_peak[0]) accel_peak[0] = position._accel[0];
+    if(-position._accel[0] > accel_peak[1]) accel_peak[1] = -position._accel[0];
+    if(position._accel[1] > accel_peak[2]) accel_peak[2] = position._accel[1];
+    if(-position._accel[1] > accel_peak[3]) accel_peak[3] = -position._accel[1];
+    if(position._accel[2] > accel_peak[4]) accel_peak[4] = position._accel[2];
+    if(-position._accel[2] > accel_peak[5]) accel_peak[5] = -position._accel[2];
+    if(position._velocity[0] > velocity_peak[0]) velocity_peak[0] = position._accel[0];
+    if(-position._velocity[0] > velocity_peak[1]) velocity_peak[1] = -position._accel[0];
+    if(position._velocity[1] > velocity_peak[2]) velocity_peak[2] = position._accel[1];
+    if(-position._velocity[1] > velocity_peak[3]) velocity_peak[3] = -position._accel[1];
+    if(position._velocity[2] > velocity_peak[4]) velocity_peak[4] = position._accel[2];
+    if(-position._velocity[2] > velocity_peak[5]) velocity_peak[5] = -position._accel[2];
 }
 
+/**
+ * @brief 从串口输出测得的最大速度、加速度
+ */
 void IMU::transmit_peak(){
     uint8_t TxBuffer1[] ="\nMax Accel:";
     HAL_UART_Transmit(&huart6, TxBuffer1, sizeof(TxBuffer1), 0xffff);
@@ -517,4 +526,63 @@ void IMU::transmit_peak(){
     uint8_t TxBuffer2[] ="\nMax Velocity:";
     HAL_UART_Transmit(&huart6, TxBuffer2, sizeof(TxBuffer2), 0xffff);
     for(int j=0;j<6;++j) float_to_str(velocity_peak[j]);
+}
+
+/**
+ * @brief 更新输出数组中roll/pitch/yaw角的值
+ */
+void IMU::OutputDataUpdate(){
+    OutputDatalist[0] = attitude.yaw;
+    OutputDatalist[1] = attitude.pitch;
+    OutputDatalist[2] = attitude.rol;
+}
+
+/**
+ * @brief 输出roll/pitch/yaw角的值
+ */
+void IMU::OutputAngleValue(){
+    for(int i = 0 ; i < OUTPUT_NUM; i++){
+        OutputAngleValue_single(i);
+    }
+}
+
+void IMU::OutputAngleValue_single(int id){
+    uint8_t TxBuffer[9] = {0};
+    bool IsPositive = true;
+    float angle = OutputDatalist[id]* 180 / 3.1415926;
+    // 限制范围
+    if (angle < -180.0f) angle += 360.0f;
+    else if (angle > 180.0f) angle -= 360.0f;
+    
+    // 缩放并转换为整数，保留三位小数
+    int data_temp = (int)(angle * 1000);
+    if (data_temp < 0) {
+        IsPositive = false;
+        data_temp = -data_temp;
+    }
+    
+    // 分解数字，最多6位（180000）
+    int data_digit[6] = {0}; // 索引0~5对应个位到十万位
+    for (int j = 0; j < 6; ++j) {
+        data_digit[j] = data_temp % 10;
+        data_temp /= 10;
+    }
+    
+    // 构建TxBuffer
+    TxBuffer[0] = IsPositive ? ' ' : '-';
+    // 整数部分
+    TxBuffer[1] = '0' + data_digit[5]; // 百位
+    TxBuffer[2] = '0' + data_digit[4]; // 十位
+    TxBuffer[3] = '0' + data_digit[3]; // 个位
+    TxBuffer[4] = '.';
+    // 小数部分
+    TxBuffer[5] = '0' + data_digit[2];
+    TxBuffer[6] = '0' + data_digit[1];
+    TxBuffer[7] = '0' + data_digit[0];
+    // 结尾符
+    if (id == OUTPUT_NUM - 1)
+        TxBuffer[8] = '\n';
+    else
+        TxBuffer[8] = ',';
+    HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0x00ff);
 }

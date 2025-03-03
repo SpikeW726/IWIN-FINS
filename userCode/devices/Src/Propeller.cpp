@@ -12,7 +12,7 @@ int32_t InitPWM_V30 = 1640;
 int32_t Deadband_V30 = 120;
 int32_t PWM_V30[7][4] = {
     {InitPWM_V30, InitPWM_V30, InitPWM_V30, InitPWM_V30}, // Base
-		{InitPWM_V30 - 100, InitPWM_V30 - 100, InitPWM_V30 + 100, InitPWM_V30 + 100}, // Front
+	{InitPWM_V30 - 100, InitPWM_V30 - 100, InitPWM_V30 + 100, InitPWM_V30 + 100}, // Front
     {InitPWM_V30 + 100, InitPWM_V30 + 100, InitPWM_V30 - 100, InitPWM_V30 - 100}, // Back
     {InitPWM_V30 + 100, InitPWM_V30 - 100, InitPWM_V30 + 100, InitPWM_V30 - 100}, // Left
     {InitPWM_V30 - 100, InitPWM_V30 + 100, InitPWM_V30 - 100, InitPWM_V30 + 100}, // Right
@@ -129,7 +129,7 @@ PID_Regulator_t RollPID_V33(2.5, /*2.5*/ 0.03, 33, 50, 25, 25, 100);
 // PID_Regulator_t PitchPID_V31(40,/*5*/ 0.02, 300, 100, 100, 100, 200);
 // PID_Regulator_t RollPID_V31(20,/*2.5*/ 0.01, 150, 200, 100, 100, 200);
 
-PID_Regulator_t YawPID_V33(10, 0.0001, 50, 10, 100, 100, 300);
+PID_Regulator_t YawPID_V33(10, 0.001, 50, 10, 100, 100, 300);
 // PID_Regulator_t YawPID_V33(30, 0.02, 1000, 100, 100, 100, 200);
 
 Propeller_Parameter_t Parameter_V33(InID_V33, OutID_V33, InitPWM_V33, PWM_V33, DepthPID_V33, PitchPID_V33, RollPID_V33, YawPID_V33);
@@ -225,7 +225,7 @@ void Propeller_I2C::Receive()
             data[Parameter.OutID[0]] = data[Parameter.OutID[1]] = data[Parameter.OutID[2]] = data[Parameter.OutID[3]] = Parameter.InitPWM;
         }
 
-        // 更新为给定的PWM，更新深度
+        // 外圈四个电机更新为给定的PWM，更新深度
         if (strncmp((char *)RxBuffer, "PRO:", 4) == 0)
         {
             char *data_str = (char *)RxBuffer + 4;
@@ -269,7 +269,7 @@ void Propeller_I2C::Receive()
             }
             else if (strncmp((char *)RxBuffer, "RPY:OFF", 7) == 0){
                 flag_angle = false;
-                data[Parameter.OutID[0]] = data[Parameter.OutID[1]] = data[Parameter.OutID[2]] = data[Parameter.OutID[3]] =Parameter.InitPWM;
+                data[Parameter.OutID[0]] = data[Parameter.OutID[1]] = data[Parameter.OutID[2]] = data[Parameter.OutID[3]] = Parameter.InitPWM;
             }
             else {
                 char *data_str = (char *)RxBuffer + 4;
@@ -471,7 +471,7 @@ void Propeller_I2C::angle_ctrl()
     float temp = 0;
     uint8_t TxBuffer[6] = {0};
 
-    // filter
+    // filter imu.attitude.yaw为弧度制
     if(useFilter){
         new_angle_diff = imu.attitude.yaw - Target_yaw;
         angle_diff = (new_angle_diff + last_angle_diff) / 2;
@@ -498,8 +498,8 @@ void Propeller_I2C::angle_ctrl()
         data[Parameter.OutID[3]] = Parameter.InitPWM + Component.Yaw_angle * factor;
         break;
     case V33: // 正负号测试中
-        data[Parameter.OutID[0]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[0]] * Component.Yaw_angle * factor;
-        data[Parameter.OutID[1]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[1]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[0]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[0]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[1]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[1]] * Component.Yaw_angle * factor;
         data[Parameter.OutID[2]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[2]] * Component.Yaw_angle * factor;
         data[Parameter.OutID[3]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[3]] * Component.Yaw_angle * factor;
         break;

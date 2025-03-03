@@ -14,6 +14,10 @@
 #include "PID.h"
 #include <stdint.h>
 
+// 输出数据个数
+#define OUTPUT_NUM                3
+ 
+// 是否融合磁力计数据
 #define IMU_USE_MAG               1 //new
 
 #define SPI_DMA_GYRO_LENGHT       8
@@ -56,6 +60,7 @@ constexpr float Cz = -0.166100036392575f;*/
 constexpr float zero_ax = 0.19184339;
 constexpr float zero_ay = 0.0227739215;
 constexpr float zero_az = 9.63659286f;
+
 /*枚举类型定义------------------------------------------------------------*/
 /*结构体定义--------------------------------------------------------------*/
 
@@ -154,6 +159,11 @@ class IMU : public Device
     void get_velocity(float velocity[3],float _accel[3], float accel[3]);
     void record_velocity(float _velocity[3], float velocity[3]);
     void get_displace(float displace[3], float _velocity[3], float velocity[3]);
+    //数据输出
+    float OutputDatalist[OUTPUT_NUM];
+    void OutputDataUpdate();
+    void OutputAngleValue();
+    void OutputAngleValue_single(int id);
 
 public:
 
