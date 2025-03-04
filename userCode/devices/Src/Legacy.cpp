@@ -86,6 +86,6 @@ void usart_printf(const char *fmt,...){
 }
 void bsp_flash_read(flash_data_t *_flashData){
     uint32_t flash_ptr = FLASH_SECTOR_9_ADDRESS;
-    memcpy(_flashData,(uint32_t*)FLASH_SECTOR_9_ADDRESS, sizeof(flash_data_t)/4);
+    memcpy(_flashData,(uint32_t*)FLASH_SECTOR_9_ADDRESS,sizeof(flash_data_t)/4);
 }
 

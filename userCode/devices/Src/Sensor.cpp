@@ -1,3 +1,6 @@
+//
+// Created by admin on 2023/11/27.
+//
 #include "Sensor.h"
 #include "Kalman_filter.h"
 
@@ -68,10 +71,10 @@ void PressureSensor::Handle()
         switch (Robot_Version)
         {
         case V30:
-            // flag_read_pres = true;
+            flag_read_pres = true;
             break;
         case V31:
-            // flag_read_pres = true;
+            flag_read_pres = true;
             break;
         case V32:
             // flag_read_pres = true;
@@ -83,31 +86,33 @@ void PressureSensor::Handle()
 
         if (flag_read_pres)
         {
-            for (int i = 0; i < SENSOR_NUM; ++i)
-            {
-                TCA_SetChannel(i);
-                // HAL_Delay(5);
-                Handle_single(i);     // 收集每个传感器数据
-                OutputData_single(i); // 串口发送传感器的数据
-            }
+            // 水深传感器非常耗时，一次只执行一个
+            TCA_SetChannel(CurrentID);
+            Handle_single(CurrentID);
+            OutputData_single(CurrentID);
+            // for (int i = 0; i < SENSOR_NUM; ++i)
+            // {
+            //     TCA_SetChannel(i);
+            //     // HAL_Delay(5);
+            //     Handle_single(i);     // 收集每个传感器数据
+            //     OutputData_single(i); // 串口发送传感器的数据
+            // }
             flag_read_pres = false;
         }
         else
         {
-            for (int i = 0; i < SENSOR_NUM; ++i)
-            {
-                TCA_SetChannel(i);
-                // HAL_Delay(5);
-                Handle_single(i); // 收集每个传感器数据
-            }
+            TCA_SetChannel(CurrentID);
+            Handle_single(CurrentID);
+            // for (int i = 0; i < SENSOR_NUM; ++i)
+            // {
+            //     TCA_SetChannel(i);
+            //     // HAL_Delay(5);
+            //     Handle_single(i); // 收集每个传感器数据
+            // }
         }
 
         CurrentID = (CurrentID + 1) % 4;
-        // CurrentID++;
-        // if (CurrentID >= 4)
-        //     CurrentID = 0;
     }
-    
     /*
     Update_plane();//计算机器人参考系下水面方程
     data_depth=-data_plane[3];//计算深度
@@ -161,8 +166,7 @@ void PressureSensor::Delay_us(uint32_t us)
     for (i = 0; i < us; i++)
     {
         int a = 10; // delay based on main clock, 168Mhz
-        while (a--)
-            ;
+        while (a--);
     }
 }
 
@@ -238,7 +242,7 @@ unsigned long PressureSensor::MS5837_30BA_GetConversion(uint8_t command)
     uint8_t data = MS5837_30BA_ADC_RD;
     uint8_t temp[3];
     HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &command, 1, 0xffff);
-    HAL_Delay(3);
+    HAL_Delay(2);
     // Delay_us(15000);
     HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &data, 1, 0xffff);
 
@@ -342,13 +346,13 @@ void PressureSensor::Init_single(int id)
         data_pressure_offset[1] = PRESSURE_1_V32;
         data_pressure_offset[2] = PRESSURE_2_V32;
         data_pressure_offset[3] = PRESSURE_3_V32;
-		    break;
+        break;
     case V33:
         data_pressure_offset[0] = PRESSURE_0_V33;
         data_pressure_offset[1] = PRESSURE_1_V33;
         data_pressure_offset[2] = PRESSURE_2_V33;
         data_pressure_offset[3] = PRESSURE_3_V33;
-		    break;
+        break;
     }
 }
 
@@ -357,7 +361,7 @@ void PressureSensor::Calibrate()
     for (int i = 0; i < SENSOR_NUM; ++i)
     {
         TCA_SetChannel(i);
-        HAL_Delay(5);
+        // HAL_Delay(5);
         Calibrate_single(i);
     }
     // bsp_flash_write(&flashData);

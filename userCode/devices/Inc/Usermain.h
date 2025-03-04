@@ -1,3 +1,7 @@
+//
+// Created by LEGION on 2021/10/4.
+//
+
 #ifndef RM_FRAME_C_DEVICE_H
 #define RM_FRAME_C_DEVICE_H
 #include "main.h"
@@ -21,13 +25,21 @@
 
 //------TODO:修改串口长度上限、各器件数量
 
-#define CONTROL_FREQUENCY 60        // 更新频率
-#define SERIAL_LENGTH_MAX 100       // 串口指令最大长度
-#define SENSOR_NUM 4                // 水压计数量
-#define SERVO_NUM 4                 // 舵机数量
-#define PROPELLER_NUM 8             // 推进器数量
-#define LED_PERIOD 500              // 亮灯周期
+#define CONTROL_FREQUENCY 60
+#define SERIAL_LENGTH_MAX 100//串口最大长度
+#define SENSOR_NUM 4//水压计数量
+#define SERVO_NUM 4//舵机数量
+#define PROPELLER_NUM 8//推进器数量
+#define LED_PERIOD 500//亮灯周期，没什么用
 
+/*
+1008.673 1012.036 1007.863 1010.265
+
+#define PRESSURE_0 1022.524
+#define PRESSURE_1 1010.162
+#define PRESSURE_2 1011.393
+#define PRESSURE_3 0958.696 
+*/
 
 #define INRANGE(NUM, MIN, MAX) \
 {\
