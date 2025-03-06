@@ -50,17 +50,20 @@ void Servo_I2C::Init()
     HAL_UARTEx_ReceiveToIdle_IT(&huart6, RxBuffer, SERIAL_LENGTH_MAX);
 }
 
-void Servo::Receive(){
+void Servo::Receive()
+{
     data_extract(RxBuffer, data, SERVO_NUM);
-    //HAL_UARTEx_ReceiveToIdle_IT(&huart6, RxBuffer, SERIAL_LENGTH_MAX);
+    // HAL_UARTEx_ReceiveToIdle_IT(&huart6, RxBuffer, SERIAL_LENGTH_MAX);
 }
 
-void Servo_I2C::Receive(){
+void Servo_I2C::Receive()
+{
     data_extract(RxBuffer, data, SERVO_NUM);
-    //HAL_UARTEx_ReceiveToIdle_IT(&huart6, RxBuffer, SERIAL_LENGTH_MAX);
+    // HAL_UARTEx_ReceiveToIdle_IT(&huart6, RxBuffer, SERIAL_LENGTH_MAX);
 }
 
-void Servo::Handle(){
+void Servo::Handle()
+{
     __HAL_TIM_SetCompare(&htim8, TIM_CHANNEL_3, data[3]);
     __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2, data[0]);
     __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, data[2]);

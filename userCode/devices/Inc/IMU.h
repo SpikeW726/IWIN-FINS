@@ -39,6 +39,10 @@
 //平均滤波采样值
 #define SUM_WIN_SIZE 8
 #define MPU6500_TEMP_PWM_MAX 1000 //mpu6500控制温度的设置TIM的重载值，即给PWM最大为 MPU6500_TEMP_PWM_MAX - 1
+
+extern float BMI088_ACCEL_SEN;
+extern float BMI088_GYRO_SEN;
+
 //轴偏
 /*constexpr float C1 = 1.010006001930344f;
 constexpr float C2 = -0.007492008326987f;
@@ -137,7 +141,7 @@ class IMU : public Device
     void velocityVerify();
 
     //姿态解算
-    void offset();    //获取加速度零偏值
+    void calibrate_offset();    //获取加速度零偏值
     void data_adjust(float accel[3],float accel_AHRS[3], float _accel[3], float gyro[3], float _gyro[3]);
     float quat_update[4];
     float quat_out[4];
@@ -146,7 +150,7 @@ class IMU : public Device
     void get_angle(float q[4], float *yaw, float *pitch, float *roll);
     void get_peak();
     void transmit_peak();
-    void float_to_str(float data);
+    void float_to_str(float data, bool flag);
     bool flag_Test;
     //温度控制
     PID tempPid;
@@ -159,11 +163,6 @@ class IMU : public Device
     void get_velocity(float velocity[3],float _accel[3], float accel[3]);
     void record_velocity(float _velocity[3], float velocity[3]);
     void get_displace(float displace[3], float _velocity[3], float velocity[3]);
-    //数据输出
-    float OutputDatalist[OUTPUT_NUM];
-    void OutputDataUpdate();
-    void OutputAngleValue();
-    void OutputAngleValue_single(int id);
 
 public:
 

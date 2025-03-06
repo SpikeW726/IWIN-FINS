@@ -14,6 +14,7 @@
 #include "Watchdog.h"
 #include "LED.h"
 #include "Buzzer.h"
+#include "gpio.h"
 
 // 定义设备数量宏
 //------TODO:修改设备数量
@@ -51,27 +52,41 @@ Device *device[DEVICE_NUM]={
 uint32_t init_Flag = 0;
 uint8_t RxBuffer[SERIAL_LENGTH_MAX]={0};
 bool flag_cnt = false;
-extern volatile int32_t time_start,time_end,time_interval,cnt;
-volatile int32_t time_start,time_end,time_interval,cnt = 0;
+extern volatile int32_t time_start, time_end, time_interval, cnt;
+volatile int32_t time_start, time_end, time_interval, cnt = 0;
+uint8_t txt[5] = {0};
+
 // 定时器中断服务函数, 用于周期性处理设备
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 
     if(init_Flag == 0) return;
-    if(htim == &htim1){//60Hz
-        for(int i=0;i<DEVICE_NUM;++i){
+    if(htim == &htim1){ //60Hz
+        time_start = HAL_GetTick();
+        for(int i = 0 ; i < DEVICE_NUM ; ++i){
                 device[i]->Handle();
         }
+        // 测量程序处理时间并输出
+        time_end = HAL_GetTick();
+        time_interval = time_end - time_start;
+        
+        int data_digit[4];
+        for (int j = 0; j < 4; ++j)
+        {
+            data_digit[j] = time_interval % 10;
+            time_interval /= 10;
+        }
+        txt[0] = '0' + data_digit[3];
+        txt[1] = '0' + data_digit[2];
+        txt[2] = '0' + data_digit[1];
+        txt[3] = '0' + data_digit[0];
+        txt[4] = '\n';
+        HAL_UART_Transmit(&huart6, txt, sizeof(txt), 0x00ff);
     }
-    /*
-    if(htim == &htim7){
-
-    }
-    if(htim == &htim10){
-
-        //aRGB_led_change(period);
-    }
-*/
+    // if(htim == &htim10){
+    //     device[DEVICE_NUM-1]->Handle();;
+    //     //aRGB_led_change(period);
+    // }
 }
 
 volatile uint8_t key_raw_state = 1;
@@ -116,6 +131,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 // 
 // }
 
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
 // 主函数入口
 int main(void)
 {
@@ -130,7 +149,6 @@ int main(void)
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
     MX_DMA_Init();
-
     MX_TIM5_Init();
     MX_TIM1_Init();
     MX_TIM4_Init();
@@ -138,10 +156,8 @@ int main(void)
     MX_TIM7_Init();
     MX_TIM10_Init();
     MX_TIM8_Init();
-
     MX_ADC1_Init();
     MX_ADC3_Init();
-
     MX_USART1_UART_Init();
     MX_USART6_UART_Init();
     MX_USART3_UART_Init();
