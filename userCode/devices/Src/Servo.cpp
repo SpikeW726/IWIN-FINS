@@ -111,16 +111,16 @@ void Servo::data_extract(uint8_t *rx, int32_t *data, int32_t num)
 
 void Servo_I2C::data_extract(uint8_t *rx, int32_t *data, int32_t num)
 {
+    // 示例：假设 PWM 命令格式是 "MOT:1000,2000,1500,1800,1600,1400\n"
     if (strncmp((char *)rx, "MOT:", 4) == 0)
     {
-
         char *data_str = (char *)rx + 4;
         char *token = strtok(data_str, ",");
         int i = 0;
         while (token != NULL && i < num)
         {
             data[i] = atoi(token);
-					  if (i == 2) {data[i] = 3000 - data[i];}
+					  if (i == 2) {data[i] = 3000 - data[i];} // 这行新版没有
             token = strtok(NULL, ",");
             i++;
         }

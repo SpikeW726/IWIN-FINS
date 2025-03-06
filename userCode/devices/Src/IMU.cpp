@@ -3,6 +3,7 @@
 //
 
 #include "IMU.h"
+#include "ist8310driver.h"
 
 IMU IMU::imu;
 
@@ -256,10 +257,10 @@ void IMU::ITHandle(uint16_t GPIO_Pin)
  * @retval         none
  */
 /**
- * @brief          根据imu_update_flag的值开启SPI DMA
- * @param[in]      temp:bmi088的温度
- * @retval         none
- */
+  * @brief          根据imu_update_flag的值开启SPI DMA
+  * @param[in]      temp:bmi088的温度
+  * @retval         none
+  */
 void IMU::imu_cmd_spi_dma(void)
 {
 
@@ -293,12 +294,13 @@ void IMU::imu_cmd_spi_dma(void)
         SPI1_DMA_enable((uint32_t)buf.accel_temp_dma_tx_buf, (uint32_t)buf.accel_temp_dma_rx_buf, SPI_DMA_ACCEL_TEMP_LENGHT);
         return;
     }
+
 }
 
 void DMA2_Stream0_IRQHandler(void)
 {
 
-    IMU::imu.ITHandle();
+	IMU::imu.ITHandle();
 }
 
 void IMU::ITHandle()
@@ -312,18 +314,19 @@ void IMU::ITHandle()
         // 陀螺仪读取完毕
         if (state.gyro_update_flag & (1u << IMU_SPI_SHFITS))
         {
-            // SystemEstimator::systemEstimator.ITEstimatorTrigger(MPU_GYRO_IT);
+           // SystemEstimator::systemEstimator.ITEstimatorTrigger(MPU_GYRO_IT);
             state.gyro_update_flag &= ~(1u << IMU_SPI_SHFITS);
             state.gyro_update_flag |= (1u << IMU_UPDATE_SHFITS);
 
             HAL_GPIO_WritePin(CS1_GYRO_GPIO_Port, CS1_GYRO_Pin, GPIO_PIN_SET);
+
         }
 
         // accel read over
         // 加速度计读取完毕
         if (state.accel_update_flag & (1u << IMU_SPI_SHFITS))
         {
-            //  SystemEstimator::systemEstimator.ITEstimatorTrigger(MPU_ACCEL_IT);
+          //  SystemEstimator::systemEstimator.ITEstimatorTrigger(MPU_ACCEL_IT);
             state.accel_update_flag &= ~(1u << IMU_SPI_SHFITS);
             state.accel_update_flag |= (1u << IMU_UPDATE_SHFITS);
 
@@ -333,12 +336,12 @@ void IMU::ITHandle()
         // 温度读取完毕
         if (state.accel_temp_update_flag & (1u << IMU_SPI_SHFITS))
         {
-            // SystemEstimator::systemEstimator.ITEstimatorTrigger(MPU_TEMP_IT);
+           // SystemEstimator::systemEstimator.ITEstimatorTrigger(MPU_TEMP_IT);
             state.accel_temp_update_flag &= ~(1u << IMU_SPI_SHFITS);
             state.accel_temp_update_flag |= (1u << IMU_UPDATE_SHFITS);
-
+					
             imu_temp_control(rawData.temp);
-
+					
             HAL_GPIO_WritePin(CS1_ACCEL_GPIO_Port, CS1_ACCEL_Pin, GPIO_PIN_SET);
         }
 
@@ -362,22 +365,22 @@ void IMU::ErrorHandle()
  */
 void IMU::AHRS_update(float quat[4], float time, float accel[3], float mag[3])
 {
-#ifdef IMU_USE_MAG
-    MahonyAHRSupdate(quat, 0, 0, 0,
-                     accel[0], accel[1], accel[2],
+    #ifdef IMU_USE_MAG
+        MahonyAHRSupdate(quat, 0, 0, 0,
+                accel[0], accel[1], accel[2],
                      mag[0], mag[1], mag[2]);
-#else
-    MahonyAHRSupdate(quat, 0, 0, 0,
-                     accel[0], accel[1], accel[2],
+    #else
+        MahonyAHRSupdate(quat, 0, 0, 0,
+                accel[0], accel[1], accel[2],
                      0, 0, 0);
-#endif
+    #endif
 }
 
 void IMU::AHRS_out(float quat[4], float time, float gyro[3], float accel[3], float mag[3])
 {
 #ifdef IMU_USE_MAG
     MahonyAHRSupdate(quat, gyro[0], gyro[1], gyro[2],
-                     accel[0], accel[1], accel[2],
+            accel[0], accel[1], accel[2],
                      mag[0], mag[1], mag[2]);
 #else
     MahonyAHRSupdate(quat, gyro[0], gyro[1], gyro[2],
@@ -393,11 +396,12 @@ void IMU::get_angle(float q[4], float *yaw, float *pitch, float *roll)
     *roll = atan2f(2.0f * (q[0] * q[1] + q[2] * q[3]), 2.0f * (q[0] * q[0] + q[3] * q[3]) - 1.0f);
 }
 
+
 /**
- * @brief          控制bmi088的温度
- * @param[in]      temp:bmi088的温度
- * @retval         none
- */
+  * @brief          控制bmi088的温度
+  * @param[in]      temp:bmi088的温度
+  * @retval         none
+  */
 void IMU::imu_temp_control(float temp)
 {
     uint16_t tempPWM;
@@ -412,6 +416,7 @@ void IMU::imu_temp_control(float temp)
         tempPWM = (uint16_t)tempPid.PIDInfo.output;
 
         IMU_temp_PWM(tempPWM);
+
     }
     else
     {
@@ -466,8 +471,9 @@ void IMU::get_displace(float displace[3], float _velocity[3], float velocity[3])
     displace[1] += ((_velocity[1] + velocity[1]) / 2 / CONTROL_FREQUENCY);
     displace[2] += ((_velocity[2] + velocity[2]) / 2 / CONTROL_FREQUENCY);
 }
+
 /**
- * @brief 数据处理
+ * @brief 测得陀螺仪和加速度计零偏值，存入rawData.accel_offset和rawData.gyro_offset数组
  * @param accel
  * @param _accel
  */
@@ -539,12 +545,9 @@ void IMU::velocityVerify()
         position.velocity[2] = 0;
     }*/
 
-    if (abs(proData.accel[0]) < 0.1)
-        proData.accel[0] = 0;
-    if (abs(proData.accel[1]) < 0.1)
-        proData.accel[1] = 0;
-    if (abs(proData.accel[2]) < 0.1)
-        proData.accel[2] = 0;
+    if (abs(proData.accel[0]) < 0.1) proData.accel[0] = 0;
+    if (abs(proData.accel[1]) < 0.1) proData.accel[1] = 0;
+    if (abs(proData.accel[2]) < 0.1) proData.accel[2] = 0;
 }
 
 void IMU::filter(float *current, IMU_Filter_t Filter)
@@ -596,10 +599,10 @@ void IMU::float_to_str(float data, bool flag)
     TxBuffer[0] = ' ';
     for (int i = 0; i < 6; ++i)
     {
-        if (data_temp < 0) {
+    if (data_temp < 0) {
             TxBuffer[0] = '-';
-            data_temp = -data_temp;
-        }
+        data_temp = -data_temp;
+    }
         data_digit[i] = data_temp % 10;
         data_temp /= 10;
     }

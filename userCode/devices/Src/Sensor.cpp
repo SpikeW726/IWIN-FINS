@@ -1,6 +1,3 @@
-//
-// Created by admin on 2023/11/27.
-//
 #include "Sensor.h"
 #include "Kalman_filter.h"
 
@@ -71,10 +68,10 @@ void PressureSensor::Handle()
         switch (Robot_Version)
         {
         case V30:
-            flag_read_pres = true;
+            // flag_read_pres = true;
             break;
         case V31:
-            flag_read_pres = true;
+            // flag_read_pres = true;
             break;
         case V32:
             // flag_read_pres = true;
@@ -346,13 +343,13 @@ void PressureSensor::Init_single(int id)
         data_pressure_offset[1] = PRESSURE_1_V32;
         data_pressure_offset[2] = PRESSURE_2_V32;
         data_pressure_offset[3] = PRESSURE_3_V32;
-        break;
+		    break;
     case V33:
         data_pressure_offset[0] = PRESSURE_0_V33;
         data_pressure_offset[1] = PRESSURE_1_V33;
         data_pressure_offset[2] = PRESSURE_2_V33;
         data_pressure_offset[3] = PRESSURE_3_V33;
-        break;
+		    break;
     }
 }
 

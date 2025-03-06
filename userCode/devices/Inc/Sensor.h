@@ -34,7 +34,7 @@
 #define PRESSURE_2_V30 1004.350
 #define PRESSURE_3_V30 1005.058
 
-#define PRESSURE_0_V31 1004.227
+#define PRESSURE_0_V31 1014.227
 #define PRESSURE_1_V31 1003.288
 #define PRESSURE_2_V31 1003.028
 #define PRESSURE_3_V31 1003.799
@@ -53,7 +53,7 @@ typedef struct Sensor_Site{
     float x[SENSOR_NUM];
     float y[SENSOR_NUM];
     float z[SENSOR_NUM];
-}Sensor_Site_t;
+} Sensor_Site_t;
 
 class PressureSensor: public  Device{
 
@@ -90,11 +90,9 @@ class PressureSensor: public  Device{
     
     int32_t CurrentID;
 
-
     Sensor_Site_t site;
 
 public:
-
 
     void Init();
     void Handle();
@@ -115,9 +113,7 @@ public:
     bool flag_read_pres; // 读取水压计读数的标志
 
     //uint8_t flag_Busy;
-
     static PressureSensor pressure_sensor;
-
 
 };
 
@@ -133,10 +129,6 @@ public:
     void Handle();
     void Receive();
     static Sonar sonar;
-
 };
-
-
-
 
 #endif //CONTROL_FRAME_MAIN_SENSOR_H

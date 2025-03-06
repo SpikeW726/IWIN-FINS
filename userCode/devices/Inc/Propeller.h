@@ -43,6 +43,7 @@ typedef struct Propeller_Component{
     float Depth;
     float Roll,Pitch,Yaw;
     float Vx,Vy,Vz;
+    float Roll_angle, Pitch_angle, Yaw_angle;
 } Propeller_Component_t;
 
 
@@ -52,17 +53,23 @@ private:
     //uint8_t RxBuffer[SERIAL_LENGTH_MAX];
     int32_t data[PROPELLER_NUM]; // PWM值，1500为不转，1500-2000正转，1000-1500反转，离1500越远转速越快
     //int32_t data_receive[5];
-    float Target_depth; 
+    float Target_depth;
     float Target_angle;
+    float Target_roll;
+    float Target_pitch;
+    float Target_yaw;
     float angle_error;
     float Target_speed[3];
     bool flag_PID;
+    bool flag_angle;
     bool flag_range;
     PID DepthPID, RollPID, PitchPID;
     PID VxPID, VyPID, YawPID;
+    PID RollAnglePID, PitchAnglePID, YawAnglePID;
 
     void float_ctrl();
     void speed_ctrl();
+    void angle_ctrl();
 
     float Component_Calc(float data);
     void OutputData_single(int id);
@@ -74,7 +81,6 @@ public:
     void Init();
     void Handle();
     void Receive();
-
 };
 
 

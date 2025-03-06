@@ -20,10 +20,10 @@
 //------TODO:修改设备数量
 #define DEVICE_NUM 5
 
-VERSION_E Robot_Version = V32;//根据潜器版本调整，V30，V31，V32，V33
+VERSION_E Robot_Version = V33;//根据潜器版本调整，V30，V31，V32，V33
 
 // 静态实例化对象
-//static IMU imu;
+IMU imu;
 static Servo servo;
 static Servo_I2C servo_i2c;
 static Propeller_I2C propeller_i2c;
@@ -51,7 +51,6 @@ Device *device[DEVICE_NUM]={
 
 uint32_t init_Flag = 0;
 uint8_t RxBuffer[SERIAL_LENGTH_MAX]={0};
-uint32_t device_counter = 0;
 bool flag_cnt = false;
 extern volatile int32_t time_start, time_end, time_interval, cnt;
 volatile int32_t time_start, time_end, time_interval, cnt = 0;
@@ -65,7 +64,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if(htim == &htim1){ //60Hz
         time_start = HAL_GetTick();
         for(int i = 0 ; i < DEVICE_NUM ; ++i){
-            device[i]->Handle();
+                device[i]->Handle();
         }
         // 测量程序处理时间并输出
         time_end = HAL_GetTick();
@@ -126,6 +125,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
     IMU::imu.ITHandle(GPIO_Pin);
 }
 
+// void DMA2_Stream0_IRQHandler(void){
+// 
+// 	IMU::imu.ITHandle();
+// 
+// }
 
 /**
   * @brief  The application entry point.
@@ -133,29 +137,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   */
 // 主函数入口
 int main(void)
-
-
 {
-    /* USER CODE BEGIN 1 */
-
-    /* USER CODE END 1 */
-
-
     /* MCU Configuration--------------------------------------------------------*/
 
     /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
     HAL_Init();
 
-    /* USER CODE BEGIN Init */
-
-    /* USER CODE END Init */
-
     /* Configure the system clock */
     SystemClock_Config();
-
-    /* USER CODE BEGIN SysInit */
-
-    /* USER CODE END SysInit */
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
@@ -180,7 +169,6 @@ int main(void)
     MX_SPI2_Init();
     //MX_IWDG_Init();
     MX_USB_DEVICE_Init();
-    /* USER CODE BEGIN 2 */
 
     HAL_TIM_Base_Start_IT(&htim5);
     HAL_TIM_Base_Start_IT(&htim1);
@@ -203,22 +191,13 @@ int main(void)
     HAL_TIM_Base_Start_IT(&htim7);
 
     // 初始化所有设备
-    for(int i=0;i<DEVICE_NUM;++i){
-        device[i]->Init();
+    for(int i = 0; i < DEVICE_NUM; ++i){
+        device[i] -> Init();
     }
 
     // 设置初始化完成标志
     init_Flag = 1;
-    /* USER CODE END 2 */
 
-    /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
     int cnt=0;
-    while (1)
-    {
-        /* USER CODE END WHILE */
-        
-        /* USER CODE BEGIN 3 */
-    }
-    /* USER CODE END 3 */
+    while (1){ }
 }
