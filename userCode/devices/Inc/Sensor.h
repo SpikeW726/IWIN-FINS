@@ -66,6 +66,7 @@ class PressureSensor: public  Device{
 
     void Init_single(int id);
     void Handle_single(int id);
+    void Handle_all();
     void Calibrate_single(int id);
     void Calibrate();
     void OutputData_single(int id);
