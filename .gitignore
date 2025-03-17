@@ -1,3 +1,7 @@
+# 忽略 Keil MDK 工程文件
+MDK-ARM/*.uvoptx
+MDK-ARM/*.uvprojx
+
 # Keil
 /MDK-ARM/RM_Frame_C
 /MDK-ARM/DebugConfig
