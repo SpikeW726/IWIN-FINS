@@ -15,6 +15,7 @@ float accelerometer[3];
 float gyro[3];
 float quat[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 float INS_angle[3] = {0.0f, 0.0f, 0.0f};
+bool is_output_angle = 0;
 
 void IMU::Init()
 {
@@ -126,14 +127,20 @@ void IMU::Handle()
  
 	MahonyAHRSupdateIMU(quat, gyro[0], gyro[1], gyro[2], accelerometer[0], accelerometer[1], accelerometer[2]);    //对得到的加速度计、陀螺仪数据进行计算得到四元数
 	get_angle(quat, INS_angle, INS_angle+1, INS_angle+2);    //对四元数计算得到欧拉角
+    attitude.yaw = INS_angle[0];
+    attitude.pitch = INS_angle[1];
+    attitude.rol = INS_angle[2];
+    float angle_value[3] = {attitude.yaw, attitude.pitch, attitude.rol};
+
     // 输出角度
-    // float data[3];
-    // for (int i = 0; i < 3; i++){
-    //     data[i] = INS_angle[i] * 180 / 3.14f;
-    //     if (i==2) float_to_str(data[i], 1);
-    //     else float_to_str(data[i], 0);
-    // }
-    
+    if(is_output_angle){
+        float data[3];
+        for (int i = 0; i < 3; i++){
+            data[i] = angle_value[i] * 180 / 3.14f;
+            if (i==2) float_to_str(data[i], 1);
+            else float_to_str(data[i], 0);
+        }
+    }
 
     // static float axdata[1000];
     // static int axdata_index=0;
@@ -216,6 +223,13 @@ void IMU::Receive()
             accel_peak[i] = 0;
             velocity_peak[i] = 0;
         }
+    }
+    if (strncmp((char *)RxBuffer, "IVA:BEG", 7) == 0)
+    {
+        is_output_angle = 1;
+    }
+    if(strncmp((char *)RxBuffer, "IVA:END", 7) == 0){
+        is_output_angle = 0;
     }
 }
 

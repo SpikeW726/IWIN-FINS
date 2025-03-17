@@ -132,7 +132,7 @@ PID_Regulator_t RollPID_V33(2.5, /*2.5*/ 0.03, 33, 50, 25, 25, 100);
 // PID_Regulator_t PitchPID_V31(40,/*5*/ 0.02, 300, 100, 100, 100, 200);
 // PID_Regulator_t RollPID_V31(20,/*2.5*/ 0.01, 150, 200, 100, 100, 200);
 
-PID_Regulator_t YawPID_V33(10, 0.001, 50, 10, 100, 100, 300);
+PID_Regulator_t YawPID_V33(2.5, 0, 0, 10, 100, 100, 300);
 // PID_Regulator_t YawPID_V33(30, 0.02, 1000, 100, 100, 100, 200);
 
 Propeller_Parameter_t Parameter_V33(InID_V33, OutID_V33, InitPWM_V33, PWM_V33, DepthPID_V33, PitchPID_V33, RollPID_V33, YawPID_V33);

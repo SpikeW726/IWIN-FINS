@@ -66,27 +66,28 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         for(int i = 0 ; i < DEVICE_NUM ; ++i){
                 device[i]->Handle();
         }
-        // 测量程序处理时间并输出
-        time_end = HAL_GetTick();
-        time_interval = time_end - time_start;
+    //     // 测量程序处理时间并输出
+    //     time_end = HAL_GetTick();
+    //     time_interval = time_end - time_start;
         
-        int data_digit[4];
-        for (int j = 0; j < 4; ++j)
-        {
-            data_digit[j] = time_interval % 10;
-            time_interval /= 10;
-        }
-        txt[0] = '0' + data_digit[3];
-        txt[1] = '0' + data_digit[2];
-        txt[2] = '0' + data_digit[1];
-        txt[3] = '0' + data_digit[0];
-        txt[4] = '\n';
-        HAL_UART_Transmit(&huart6, txt, sizeof(txt), 0x00ff);
-    }
+    //     int data_digit[4];
+    //     for (int j = 0; j < 4; ++j)
+    //     {
+    //         data_digit[j] = time_interval % 10;
+    //         time_interval /= 10;
+    //     }
+    //     txt[0] = '0' + data_digit[3];
+    //     txt[1] = '0' + data_digit[2];
+    //     txt[2] = '0' + data_digit[1];
+    //     txt[3] = '0' + data_digit[0];
+    //     txt[4] = '\n';
+    //     HAL_UART_Transmit(&huart6, txt, sizeof(txt), 0x00ff);
+    // }
     // if(htim == &htim10){
     //     device[DEVICE_NUM-1]->Handle();;
     //     //aRGB_led_change(period);
     // }
+    }
 }
 
 volatile uint8_t key_raw_state = 1;
