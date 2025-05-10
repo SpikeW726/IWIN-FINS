@@ -41,12 +41,12 @@ int32_t InitPWM_V31 = 1550;
 int32_t Deadband_V31 = 100;
 int32_t PWM_V31[7][4] = {
     {1460, 1400, 1460, 1715}, // Base
-    {1650, 1450, 1450, 1650}, // Front
-    {1450, 1650, 1650, 1450}, // Back
-    {1450, 1450, 1450, 1450}, // Left
-    {1650, 1650, 1650, 1650}, // Right
-    {1650, 1450, 1650, 1450}, // ClockWise
-    {1450, 1650, 1450, 1650}  // AntiClockWise
+    {1750, 1350, 1750, 1750}, // Front
+    {1350, 1750, 1750, 1350}, // Back
+    {1350, 1350, 1350, 1350}, // Left
+    {1750, 1750, 1750, 1750}, // Right
+    {1700, 1400, 1700, 1400}, // ClockWise
+    {1400, 1700, 1400, 1700}  // AntiClockWise
 };
 
 PID_Regulator_t DepthPID_V31(20, 0.015, 33, 100, 100, 100, 200);
@@ -107,21 +107,21 @@ int32_t Deadband_V33 = 120;
 
 int32_t PWM_V33[7][4] = {
     {InitPWM_V33, InitPWM_V33 - Sign_V33[InID_V33[1]] * 100, InitPWM_V33, InitPWM_V33 - Sign_V33[InID_V33[3]] * 90},                                                                                                                             // Base
-    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 90}, // Front
-    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 90}, // Back
-    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 90}, // Left
-    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 90}, // Right
-    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 70},     // ClockWise
-    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 70}      // AntiClockWise
+    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 80, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 80, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 80, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 80}, // Front
+    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 80, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 80, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 80, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 80}, // Back
+    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 80, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 80, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 80, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 80}, // Left
+    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 80, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 80, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 80, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 80}, // Right
+    {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 50, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 50, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 50, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 50},     // ClockWise
+    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 50, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 50, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 50, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 50}      // AntiClockWise
 };
 
 // PID_Regulator_t DepthPID_V32(20, 0.005, 100, 100, 100, 100, 200);
 // PID_Regulator_t PitchPID_V32(10,/*5*/ 0.01, 100, 100, 100, 100, 200);
 // PID_Regulator_t RollPID_V32(2.5, /*2.5*/ 0.01, 100, 100, 100, 100, 200);
 
-PID_Regulator_t DepthPID_V33(20, 0.015, 33, 100, 50, 50, 200);
-PID_Regulator_t PitchPID_V33(10, /*5*/ 0.03, 33, 50, 25, 25, 100);
-PID_Regulator_t RollPID_V33(2.5, /*2.5*/ 0.03, 33, 50, 25, 25, 100);
+PID_Regulator_t DepthPID_V33(20, 0.015, 33, 50, 50, 50, 200);
+PID_Regulator_t PitchPID_V33(10, /*5*/ 0.03, 50, 50, 25, 25, 100);
+PID_Regulator_t RollPID_V33(1.8, /*2.5*/ 0.03, 100, 50, 25, 25, 100);
 // PID_Regulator_t DepthPID_V31(20, 0.005, 10, 100, 100, 100, 200);
 // PID_Regulator_t PitchPID_V31(40,/*5*/ 0.02, 300, 100, 100, 100, 200);
 // PID_Regulator_t RollPID_V31(20,/*2.5*/ 0.01, 150, 200, 100, 100, 200);
@@ -307,10 +307,10 @@ void Propeller_I2C::Handle()
         }
     }
 
-    // 串口发送推进器的数据
-     //for(int i=0;i<4;++i){
-     //    OutputData_single(i);
-     //}
+     // 串口发送推进器的数据
+    //  for(int i=0; i<4; ++i){
+    //      OutputData_single(i);
+    //  }
 }
 
 void Propeller_I2C::OutputData_single(int id)
