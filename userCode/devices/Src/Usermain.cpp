@@ -23,7 +23,7 @@
 VERSION_E Robot_Version = V33;//根据潜器版本调整，V30，V31，V32，V33
 
 // 静态实例化对象
-IMU imu;
+// IMU imu;
 static Servo servo;
 static Servo_I2C servo_i2c;
 static Propeller_I2C propeller_i2c;

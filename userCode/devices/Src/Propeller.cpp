@@ -6,8 +6,8 @@
 #include "IMU.h"
 #include "algorithm"
 
-extern IMU imu;
-
+// extern IMU imu;
+// IMU imu = IMU::imu;
 // V30
 int32_t InID_V30[4] = {1, 2, 6, 5};  // 内部的4个轮，左前-左后-右前-右后
 int32_t OutID_V30[4] = {3, 0, 7, 4}; // 外部的4个轮，左前-左后-右前-右后
@@ -437,7 +437,7 @@ void Propeller_I2C::speed_ctrl()
     // Component.Vy =  RollPID.PIDCalc(Target_speed[1], IMU::imu.position._velocity[1]);
     Component.Vx = Target_speed[0];
     Component.Vy = Target_speed[1];
-    angle_error = Target_angle - imu.attitude.yaw;
+    angle_error = Target_angle - IMU::imu.attitude.yaw;
     if (angle_error < -3.14)
         angle_error += 6.28;
     else if (angle_error > 3.14)
@@ -476,11 +476,11 @@ void Propeller_I2C::angle_ctrl()
 
     // filter imu.attitude.yaw为弧度制
     if(useFilter){
-        new_angle_diff = imu.attitude.yaw - Target_yaw;
+        new_angle_diff = IMU::imu.attitude.yaw - Target_yaw;
         angle_diff = (new_angle_diff + last_angle_diff) / 2;
         last_angle_diff = new_angle_diff;
     }
-    else angle_diff = imu.attitude.yaw - Target_yaw;
+    else angle_diff = IMU::imu.attitude.yaw - Target_yaw;
     
     // pre-process
     if(angle_diff > pi) angle_diff = -(2*pi - angle_diff);
@@ -524,31 +524,39 @@ void Propeller_I2C::angle_ctrl()
             data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] < Parameter.InitPWM + deadBand) ? Parameter.InitPWM + deadBand : data[Parameter.OutID[i]];
         }
     }
-    // 串口发送传感器数据，输出除以1000为实际弧度。
-    if(true){
-        temp = imu.attitude.yaw; //这里可以换成需要的其他数据
-        if(false){ //老方法，不太鲁棒，新方法有问题再用
-            TxBuffer[0] = '+';
-            if(temp < 0){
-                temp = -temp;
-                TxBuffer[0] = '-';
-            }
-            for (int i = 1; i < 5; i++) {
-                TxBuffer[i] = '0' + (int)temp;
-                temp -= (int)temp;
-                temp *= 10;
-            }
-            TxBuffer[5] = ' ';
-            HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0x00ff);
-        }
-        else{ //新方法，理论上兼容性更好，未测试
-            char str[20];
-            snprintf(str, sizeof(str), "%.4f", temp);  // 只保留4位小数
-            for (int i = 0; i < 6; i++) {
-                TxBuffer[i] = str[i];
-            }
-        }
+
+    // Output yaw data
+    float temp_data[2] = {IMU::imu.attitude.yaw, Target_yaw};
+    for (int i = 0; i < 2; i++){
+        if(i==1) Output_YawData(temp_data[i], 1);
+        else Output_YawData(temp_data[i], 0);
     }
+    // 串口发送传感器数据，输出除以1000为实际弧度。
+    // if(true){
+    //     temp = IMU::imu.attitude.yaw; //这里可以换成需要的其他数据
+    //     if(true){ //老方法，不太鲁棒，新方法有问题再用
+    //         TxBuffer[0] = '+';
+    //         if(temp < 0){
+    //             temp = -temp;
+    //             TxBuffer[0] = '-';
+    //         }
+    //         for (int i = 1; i < 5; i++) {
+    //             TxBuffer[i] = '0' + (int)temp;
+    //             temp -= (int)temp;
+    //             temp *= 10;
+    //         }
+    //         TxBuffer[5] = ' ';
+    //         HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0x00ff);
+    //     }
+    //     else{ //新方法，理论上兼容性更好，未测试
+    //         char str[20];
+    //         snprintf(str, sizeof(str), "%.4f", temp);  // 只保留4位小数
+    //         for (int i = 0; i < 6; i++) {
+    //             TxBuffer[i] = str[i];
+    //         }
+    //     }
+    // }
+
 }
 
 float Propeller_I2C::Component_Calc(float data)
@@ -556,4 +564,30 @@ float Propeller_I2C::Component_Calc(float data)
     return (data > 0) ? data + 30 : data - 30; // 老版本是+-60
 }
 
+void Propeller_I2C::Output_YawData(float data, bool flag){
+    int data_temp = (int)(data * 1000);
+    int data_digit[6];
+    bool IsPositive = true;
+    uint8_t TxBuffer[9];
+    TxBuffer[0] = ' ';
+    for (int i = 0; i < 6; ++i)
+    {
+    if (data_temp < 0) {
+            TxBuffer[0] = '-';
+        data_temp = -data_temp;
+    }
+        data_digit[i] = data_temp % 10;
+        data_temp /= 10;
+    }
+    TxBuffer[1] = '0' + data_digit[5];
+    TxBuffer[2] = '0' + data_digit[4];
+    TxBuffer[3] = '0' + data_digit[3];
+    TxBuffer[4] = '.';
+    TxBuffer[5] = '0' + data_digit[2];
+    TxBuffer[6] = '0' + data_digit[1];
+    TxBuffer[7] = '0' + data_digit[0];
+    if (flag) TxBuffer[8] = '\n';
+    else TxBuffer[8] = ',';
+    HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0xffff);
+}
 // 死区为1450-1550

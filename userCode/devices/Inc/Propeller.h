@@ -73,6 +73,7 @@ private:
 
     float Component_Calc(float data);
     void OutputData_single(int id);
+    void Output_YawData(float data, bool flag);
 
     Propeller_Component_t Component;
     Propeller_Parameter_t Parameter;
