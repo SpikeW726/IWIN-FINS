@@ -53,15 +53,34 @@ uint8_t RxBuffer[SERIAL_LENGTH_MAX]={0};
 bool flag_cnt = false;
 extern volatile int32_t time_start,time_end,time_interval,cnt;
 volatile int32_t time_start,time_end,time_interval,cnt = 0;
+uint8_t txt[5] = {1};
 // 定时器中断服务函数, 用于周期性处理设备
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 
     if(init_Flag == 0) return;
     if(htim == &htim1){//60Hz
+        time_start = HAL_GetTick();
         for(int i=0;i<DEVICE_NUM;++i){
-                device[i]->Handle();
+            // time_start = HAL_GetTick();
+            device[i]->Handle();
         }
+        // 测量程序处理时间并输出
+        // time_end = HAL_GetTick();
+        // time_interval = time_end - time_start;
+        
+        // int data_digit[4];
+        // for (int j = 0; j < 4; ++j)
+        // {
+        //     data_digit[j] = time_interval % 10;
+        //     time_interval /= 10;
+        // }
+        // txt[0] = '0' + data_digit[3];
+        // txt[1] = '0' + data_digit[2];
+        // txt[2] = '0' + data_digit[1];
+        // txt[3] = '0' + data_digit[0];
+        // txt[4] = '\n';
+        // HAL_UART_Transmit(&huart6, txt, sizeof(txt), 0x00ff);
     }
     /*
     if(htim == &htim7){
@@ -88,6 +107,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t datasize)//H
             RxBuffer[i] = 0;
         }
         HAL_UARTEx_ReceiveToIdle_IT(&huart6, RxBuffer, SERIAL_LENGTH_MAX);
+        HAL_UART_Transmit(&huart6, txt, sizeof(txt), 0x00ff);
     }
 
 }

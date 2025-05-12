@@ -44,10 +44,10 @@
 #define PRESSURE_2_V32 1010.074
 #define PRESSURE_3_V32 1009.850
 
-#define PRESSURE_0_V33 1004.227
-#define PRESSURE_1_V33 1003.288
-#define PRESSURE_2_V33 1003.028
-#define PRESSURE_3_V33 1003.799
+#define PRESSURE_0_V33 1009.245
+#define PRESSURE_1_V33 1008.854
+#define PRESSURE_2_V33 1009.861
+#define PRESSURE_3_V33 1009.838
 
 typedef struct Sensor_Site{
     float x[SENSOR_NUM];
@@ -66,6 +66,7 @@ class PressureSensor: public  Device{
 
     void Init_single(int id);
     void Handle_single(int id);
+    void Handle_all();
     void Calibrate_single(int id);
     void Calibrate();
     void OutputData_single(int id);

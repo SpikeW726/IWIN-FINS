@@ -14,7 +14,11 @@
 #include "PID.h"
 #include <stdint.h>
 
-#define IMU_USE_MAG
+// 输出数据个数
+#define OUTPUT_NUM                3
+ 
+// 是否融合磁力计数据
+#define IMU_USE_MAG               1 //new
 
 #define SPI_DMA_GYRO_LENGHT       8
 #define SPI_DMA_ACCEL_LENGHT      9
@@ -35,6 +39,10 @@
 //平均滤波采样值
 #define SUM_WIN_SIZE 8
 #define MPU6500_TEMP_PWM_MAX 1000 //mpu6500控制温度的设置TIM的重载值，即给PWM最大为 MPU6500_TEMP_PWM_MAX - 1
+
+extern float BMI088_ACCEL_SEN;
+extern float BMI088_GYRO_SEN;
+
 //轴偏
 /*constexpr float C1 = 1.010006001930344f;
 constexpr float C2 = -0.007492008326987f;
@@ -56,24 +64,24 @@ constexpr float Cz = -0.166100036392575f;*/
 constexpr float zero_ax = 0.19184339;
 constexpr float zero_ay = 0.0227739215;
 constexpr float zero_az = 9.63659286f;
+
 /*枚举类型定义------------------------------------------------------------*/
 /*结构体定义--------------------------------------------------------------*/
 
 
 typedef struct IMU_Raw_Data{
-    float accel[3],gyro[3],temp,time,mag[3],accel_offset[3],gyro_offset[3], ax, ay, az;
-}IMU_Raw_Data_t;
+    float accel[3], gyro[3], temp, time, mag[3], accel_offset[3], gyro_offset[3], ax, ay, az;
+} IMU_Raw_Data_t;
 
 typedef struct IMU_Pro_Data{
-    float accel[3],accel_AHRS[3],gyro[3],temp,time,mag[3],ay;
-}IMU_Pro_Data_t;
+    float accel[3], accel_AHRS[3], gyro[3], temp, time, mag[3], ay;
+} IMU_Pro_Data_t;
 
 typedef struct IMU_Attitude{
-    float yaw,pitch,rol;
-
-    float yaw_v,pitch_v,rol_v;
-    float neg_yaw_v,neg_pitch_v,neg_rol_v;
-}IMU_Attitude_t;
+    float yaw, pitch, rol;
+    float yaw_v, pitch_v, rol_v;
+    float neg_yaw_v, neg_pitch_v, neg_rol_v;
+} IMU_Attitude_t;
 
 typedef struct IMU_state{
 	
@@ -121,20 +129,19 @@ typedef struct IMU_buffer{
 
 class IMU : public Device
 {
-
-
     void ErrorHandle();
 
     //读取数据
     IMU_buffer buf;
-
     IMU_state state;
     void imu_cmd_spi_dma(void);
     void filter(float *current, IMU_Filter Filter);
+
     //数据处理
     void velocityVerify();
+
     //姿态解算
-    void offset();    //获取加速度零偏值
+    void calibrate_offset();    //获取加速度零偏值
     void data_adjust(float accel[3],float accel_AHRS[3], float _accel[3], float gyro[3], float _gyro[3]);
     float quat_update[4];
     float quat_out[4];
@@ -143,7 +150,7 @@ class IMU : public Device
     void get_angle(float q[4], float *yaw, float *pitch, float *roll);
     void get_peak();
     void transmit_peak();
-    void float_to_str(float data);
+    void float_to_str(float data, bool flag);
     bool flag_Test;
     //温度控制
     PID tempPid;
@@ -165,8 +172,8 @@ public:
     void ITHandle(uint16_t GPIO_Pin);
     void ITHandle(void);
 
-    static IMU imu;
-
+		static IMU imu;
+    
     IMU_Raw_Data_t rawData;
     IMU_Pro_Data_t proData;
     IMU_Attitude_t attitude;
