@@ -132,8 +132,8 @@ PID_Regulator_t RollPID_V33(2.5, /*2.5*/ 0.03, 33, 50, 25, 25, 100);
 // PID_Regulator_t PitchPID_V31(40,/*5*/ 0.02, 300, 100, 100, 100, 200);
 // PID_Regulator_t RollPID_V31(20,/*2.5*/ 0.01, 150, 200, 100, 100, 200);
 
-PID_Regulator_t YawPID_V33(2.5, 0, 0, 10, 100, 100, 300);
-// PID_Regulator_t YawPID_V33(30, 0.02, 1000, 100, 100, 100, 200);
+PID_Regulator_t YawPID_V33(12, 0.06, 300, 10, 100, 50, 300);
+// PID_Regulator_t YawPID_V33(10, 0.0001, 50, 10, 100, 100, 300);
 
 Propeller_Parameter_t Parameter_V33(InID_V33, OutID_V33, InitPWM_V33, PWM_V33, DepthPID_V33, PitchPID_V33, RollPID_V33, YawPID_V33);
 
@@ -172,6 +172,8 @@ void Propeller_I2C::Init()
     Target_speed[0] = 0;
     Target_speed[1] = 0;
     flag_PID = false;
+    flag_roll = false;
+    flag_PWM_output = false;
     TCA_SetChannel(4); // 1路 I2C 扩展为 8路
     HAL_Delay(5);
     PCA_Write(PCA9685_MODE1, 0x0);
@@ -290,6 +292,16 @@ void Propeller_I2C::Receive()
             }
         }
 
+        // 当开启角度控制时先默认输出角度数据，可以通过串口输入改为输出PWM数据
+        if(flag_angle){
+            if (strncmp((char *)RxBuffer, "PWM:BEG", 7) == 0){
+                flag_PWM_output = true;
+            }
+            else if (strncmp((char *)RxBuffer, "PWM:END", 7) == 0){
+                flag_PWM_output = false;
+            }
+        }
+
         // 更新深度
         if (strncmp((char *)RxBuffer, "H:", 2) == 0)
         {
@@ -304,6 +316,17 @@ void Propeller_I2C::Receive()
             {
                 data[Parameter.OutID[i]] = Parameter.InitPWM;
             }
+        }
+
+        // 启动原地横滚
+        if (strncmp((char *)RxBuffer, "ROL:BEG", 7) == 0)
+        {
+            flag_roll = true;
+        }
+        // 停止原地横滚
+        if (strncmp((char *)RxBuffer, "ROL:END", 7) == 0)
+        {
+            flag_roll = false;
         }
     }
 
@@ -342,8 +365,9 @@ void Propeller_I2C::Handle()
     TCA_SetChannel(4);
     // HAL_Delay(5);
     if (flag_PID)
-    {
-        float_ctrl(); // PID控制悬浮状态
+    {   
+        if (!flag_roll) float_ctrl(); // PID控制悬浮状态
+        else roll_ctrl(); 
         // speed_ctrl();
     }
     
@@ -458,7 +482,8 @@ void Propeller_I2C::speed_ctrl()
 void Propeller_I2C::angle_ctrl()
 {
     // used by filter
-    bool useFilter = false;
+    float filter_rate = 0.8;
+    bool useFilter = true;
     static float last_angle_diff = 0;
     static float new_angle_diff = 0;
     float angle_diff = 0;
@@ -468,24 +493,31 @@ void Propeller_I2C::angle_ctrl()
     int deadBand = 100;
     int outMax = 120;
     // pi
-    float pi = 3.141593;
+    float pi = 3.14f;
     //debug
     int i = 0;
     float temp = 0;
     uint8_t TxBuffer[6] = {0};
 
-    // filter imu.attitude.yaw为弧度制
+    // // filter imu.attitude.yaw为弧度制
+    // angle_diff = IMU::imu.attitude.yaw - Target_yaw;
+    // new_angle_diff = angle_diff;
+    // if(fabs(angle_diff) <= 10){
+    //     angle_diff = new_angle_diff*(1-filter_rate) + last_angle_diff*filter_rate;
+    // }
+    // last_angle_diff = new_angle_diff;
+    
     if(useFilter){
         new_angle_diff = IMU::imu.attitude.yaw - Target_yaw;
-        angle_diff = (new_angle_diff + last_angle_diff) / 2;
+        angle_diff = new_angle_diff*(1-filter_rate) + last_angle_diff*filter_rate;
         last_angle_diff = new_angle_diff;
     }
     else angle_diff = IMU::imu.attitude.yaw - Target_yaw;
-    
+
     // pre-process
     if(angle_diff > pi) angle_diff = -(2*pi - angle_diff);
     if(angle_diff < -pi) angle_diff = (2*pi + angle_diff);
-    if (angle_diff < deadZone*pi/180 && angle_diff > -deadZone*pi/180) angle_diff = 0;
+    // if (angle_diff < deadZone*pi/180 && angle_diff > -deadZone*pi/180) angle_diff = 0;
 
     // pid
     Component.Yaw_angle = YawAnglePID.PIDCalc(0, angle_diff);
@@ -500,11 +532,11 @@ void Propeller_I2C::angle_ctrl()
         data[Parameter.OutID[2]] = Parameter.InitPWM + Component.Yaw_angle * factor;
         data[Parameter.OutID[3]] = Parameter.InitPWM + Component.Yaw_angle * factor;
         break;
-    case V33: // 正负号测试中
-        data[Parameter.OutID[0]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[0]] * Component.Yaw_angle * factor;
-        data[Parameter.OutID[1]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[1]] * Component.Yaw_angle * factor;
-        data[Parameter.OutID[2]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[2]] * Component.Yaw_angle * factor;
-        data[Parameter.OutID[3]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[3]] * Component.Yaw_angle * factor;
+    case V33: // 正负号已确定无误
+        data[Parameter.OutID[0]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[0]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[1]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[1]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[2]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[2]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[3]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[3]] * Component.Yaw_angle * factor;
         break;
     default:
         data[Parameter.OutID[0]] = Parameter.InitPWM + Component.Yaw_angle * factor;
@@ -525,59 +557,59 @@ void Propeller_I2C::angle_ctrl()
         }
     }
 
-    // Output yaw data
-    float temp_data[2] = {IMU::imu.attitude.yaw, Target_yaw};
-    for (int i = 0; i < 2; i++){
-        if(i==1) Output_YawData(temp_data[i], 1);
-        else Output_YawData(temp_data[i], 0);
+    if(flag_PWM_output){
+        // Output PWM value
+        for (int i = 0; i < 4; i++){
+            if(i==3) Output_Data(data[Parameter.OutID[i]], 1, 0);
+            else Output_Data(data[Parameter.OutID[i]], 0, 0);
+        }
     }
-    // 串口发送传感器数据，输出除以1000为实际弧度。
-    // if(true){
-    //     temp = IMU::imu.attitude.yaw; //这里可以换成需要的其他数据
-    //     if(true){ //老方法，不太鲁棒，新方法有问题再用
-    //         TxBuffer[0] = '+';
-    //         if(temp < 0){
-    //             temp = -temp;
-    //             TxBuffer[0] = '-';
-    //         }
-    //         for (int i = 1; i < 5; i++) {
-    //             TxBuffer[i] = '0' + (int)temp;
-    //             temp -= (int)temp;
-    //             temp *= 10;
-    //         }
-    //         TxBuffer[5] = ' ';
-    //         HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0x00ff);
-    //     }
-    //     else{ //新方法，理论上兼容性更好，未测试
-    //         char str[20];
-    //         snprintf(str, sizeof(str), "%.4f", temp);  // 只保留4位小数
-    //         for (int i = 0; i < 6; i++) {
-    //             TxBuffer[i] = str[i];
-    //         }
-    //     }
+    else{
+        // Output yaw data
+        float tmp_data[3] = {IMU::imu.attitude.yaw, Target_yaw, angle_diff};
+        for (int i = 0; i < 3; i++){
+            if(i==2) Output_Data(tmp_data[i], 1, 1);
+            else Output_Data(tmp_data[i], 0, 1);
+        }
+    }
+    
+    // float tmp_data[3] = {IMU::imu.attitude.yaw, Target_yaw, angle_diff};
+    // for (int i = 0; i < 3; i++){
+    //     if(i==2) Output_YawData(tmp_data[i], 1);
+    //     else Output_YawData(tmp_data[i], 0);
     // }
 
 }
+
+// 原地横滚控制
+void Propeller_I2C::roll_ctrl(){
+
+}
+
 
 float Propeller_I2C::Component_Calc(float data)
 {
     return (data > 0) ? data + 30 : data - 30; // 老版本是+-60
 }
 
-void Propeller_I2C::Output_YawData(float data, bool flag){
-    int data_temp = (int)(data * 1000);
+void Propeller_I2C::Output_Data(float data, bool flag, bool is_angle){
+    // 根据数据是不是角度来选择如何进行第一步处理
+    int data_tmp;
+    if(is_angle) data_tmp = (int)(data * 1000 * 180 / 3.14f);
+    else data_tmp = (int)(data * 1000);
+    
     int data_digit[6];
     bool IsPositive = true;
     uint8_t TxBuffer[9];
     TxBuffer[0] = ' ';
     for (int i = 0; i < 6; ++i)
     {
-    if (data_temp < 0) {
+    if (data_tmp < 0) {
             TxBuffer[0] = '-';
-        data_temp = -data_temp;
+        data_tmp = -data_tmp;
     }
-        data_digit[i] = data_temp % 10;
-        data_temp /= 10;
+        data_digit[i] = data_tmp % 10;
+        data_tmp /= 10;
     }
     TxBuffer[1] = '0' + data_digit[5];
     TxBuffer[2] = '0' + data_digit[4];
@@ -590,4 +622,33 @@ void Propeller_I2C::Output_YawData(float data, bool flag){
     else TxBuffer[8] = ',';
     HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0xffff);
 }
+
+// void Propeller_I2C::Output_YawData(float data, bool flag){
+//     int data_tmp;
+//     data_tmp = (int)(data * 1000 * 180 / 3.14f);
+    
+//     int data_digit[6];
+//     bool IsPositive = true;
+//     uint8_t TxBuffer[9];
+//     TxBuffer[0] = ' ';
+//     for (int i = 0; i < 6; ++i)
+//     {
+//     if (data_tmp < 0) {
+//             TxBuffer[0] = '-';
+//         data_tmp = -data_tmp;
+//     }
+//         data_digit[i] = data_tmp % 10;
+//         data_tmp /= 10;
+//     }
+//     TxBuffer[1] = '0' + data_digit[5];
+//     TxBuffer[2] = '0' + data_digit[4];
+//     TxBuffer[3] = '0' + data_digit[3];
+//     TxBuffer[4] = '.';
+//     TxBuffer[5] = '0' + data_digit[2];
+//     TxBuffer[6] = '0' + data_digit[1];
+//     TxBuffer[7] = '0' + data_digit[0];
+//     if (flag) TxBuffer[8] = '\n';
+//     else TxBuffer[8] = ',';
+//     HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0xffff);
+// }
 // 死区为1450-1550

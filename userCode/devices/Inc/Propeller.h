@@ -63,6 +63,8 @@ private:
     bool flag_PID;
     bool flag_angle;
     bool flag_range;
+    bool flag_roll;
+    bool flag_PWM_output;
     PID DepthPID, RollPID, PitchPID;
     PID VxPID, VyPID, YawPID;
     PID RollAnglePID, PitchAnglePID, YawAnglePID;
@@ -70,10 +72,12 @@ private:
     void float_ctrl();
     void speed_ctrl();
     void angle_ctrl();
+    void roll_ctrl();
 
     float Component_Calc(float data);
     void OutputData_single(int id);
-    void Output_YawData(float data, bool flag);
+    void Output_Data(float data, bool flag, bool is_angle);
+    // void Output_YawData(float data, bool flag);
 
     Propeller_Component_t Component;
     Propeller_Parameter_t Parameter;

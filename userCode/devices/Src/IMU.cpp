@@ -16,7 +16,7 @@ float gyro[3];
 float quat[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 float INS_angle[3] = {0.0f, 0.0f, 0.0f};
 bool is_output_angle = 0;
-bool is_output_accl = 0;
+// bool is_output_accl = 0;
 
 void IMU::Init()
 {
@@ -143,13 +143,14 @@ void IMU::Handle()
         }
     }
 
-    // 输出三轴加速度
-    if(is_output_accl){
-        for (int i = 0; i < 3; i++){
-            if (i==2) float_to_str(accelerometer[i], 1);
-            else float_to_str(accelerometer[i], 0);
-        }
-    }
+    // // 输出三轴加速度
+    // if(is_output_accl){
+    //     for (int i = 0; i < 3; i++){
+    //         if (i==2) float_to_str(accelerometer[i], 1);
+    //         else float_to_str(accelerometer[i], 0);
+    //     }
+    // }
+
     // static float axdata[1000];
     // static int axdata_index=0;
     // count_imu++;
@@ -240,14 +241,15 @@ void IMU::Receive()
     {
         is_output_angle = 0;
     }
-    if (strncmp((char *)RxBuffer, "AVA:BEG", 7) == 0)
-    {
-        is_output_accl = 1;
-    }
-    if (strncmp((char *)RxBuffer, "AVA:BEG", 7) == 0)
-    {
-        is_output_accl = 0;
-    }
+
+    // if (strncmp((char *)RxBuffer, "AVA:BEG", 7) == 0)
+    // {
+    //     is_output_accl = 1;
+    // }
+    // if (strncmp((char *)RxBuffer, "AVA:BEG", 7) == 0)
+    // {
+    //     is_output_accl = 0;
+    // }
     
 }
 
