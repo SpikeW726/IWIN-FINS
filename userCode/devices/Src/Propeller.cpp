@@ -328,6 +328,7 @@ void Propeller_I2C::Receive()
         if (strncmp((char *)RxBuffer, "ROL:END", 7) == 0)
         {
             flag_roll = false;
+            Target_roll = 0;
         }
     }
 
@@ -629,44 +630,41 @@ void Propeller_I2C::roll_ctrl(){
         }
     }
 
-
     // pid
-    Component.Roll_angle = YawAnglePID.PIDCalc(0, angle_diff);
+    Component.Roll = RollPID.PIDCalc(0, angle_diff);
 
     // post-process
     switch (Robot_Version) 
     {
         //可以根据不同版本调整螺旋桨方向（改变这个正负号 ↓）
-    case V31: // 正负号疑似有问题
-        data[Parameter.OutID[0]] = Parameter.InitPWM + Component.Yaw_angle * factor;
-        data[Parameter.OutID[1]] = Parameter.InitPWM + Component.Yaw_angle * factor;
-        data[Parameter.OutID[2]] = Parameter.InitPWM + Component.Yaw_angle * factor;
-        data[Parameter.OutID[3]] = Parameter.InitPWM + Component.Yaw_angle * factor;
-        break;
-    case V33: // 正负号已确定无误
-        data[Parameter.OutID[0]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[0]] * Component.Yaw_angle * factor;
-        data[Parameter.OutID[1]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[1]] * Component.Yaw_angle * factor;
-        data[Parameter.OutID[2]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[2]] * Component.Yaw_angle * factor;
-        data[Parameter.OutID[3]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[3]] * Component.Yaw_angle * factor;
+    case V33: // 正负号已确认正确
+        if(IMU::imu.attitude.rol > deg2rad(90) || IMU::imu.attitude.rol < deg2rad(-90)){
+            data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V33[Parameter.InID[0]] * (Component.Depth + Component.Roll - Component.Pitch);  
+            data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V33[Parameter.InID[1]] * (Component.Depth + Component.Roll + Component.Pitch);  
+            data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V33[Parameter.InID[2]] * (Component.Depth - Component.Roll - Component.Pitch);  
+            data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V33[Parameter.InID[3]] * (Component.Depth - Component.Roll + Component.Pitch);
+        }
+        else{
+            data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V33[Parameter.InID[0]] * (-Component.Depth + Component.Roll - Component.Pitch);  
+            data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V33[Parameter.InID[1]] * (-Component.Depth + Component.Roll + Component.Pitch);  
+            data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V33[Parameter.InID[2]] * (-Component.Depth - Component.Roll - Component.Pitch);  
+            data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V33[Parameter.InID[3]] * (-Component.Depth - Component.Roll + Component.Pitch);
+        }
         break;
     default:
-        data[Parameter.OutID[0]] = Parameter.InitPWM + Component.Yaw_angle * factor;
-        data[Parameter.OutID[1]] = Parameter.InitPWM + Component.Yaw_angle * factor;
-        data[Parameter.OutID[2]] = Parameter.InitPWM + Component.Yaw_angle * factor;
-        data[Parameter.OutID[3]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[0]] = Parameter.InitPWM + Component.Roll_angle * factor;
+        data[Parameter.OutID[1]] = Parameter.InitPWM + Component.Roll_angle * factor;
+        data[Parameter.OutID[2]] = Parameter.InitPWM + Component.Roll_angle * factor;
+        data[Parameter.OutID[3]] = Parameter.InitPWM + Component.Roll_angle * factor;
         break;
     }
-    // output limit min and max
-    for (int i = 0; i < 4; i++){
-        if(data[Parameter.OutID[i]] < Parameter.InitPWM - 10){
-            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] < Parameter.InitPWM - outMax) ? Parameter.InitPWM - outMax : data[Parameter.OutID[i]];
-            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] > Parameter.InitPWM - deadBand) ? Parameter.InitPWM - deadBand : data[Parameter.OutID[i]];
-        }
-        if(data[Parameter.OutID[i]] > Parameter.InitPWM + 10){
-            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] > Parameter.InitPWM + outMax) ? Parameter.InitPWM + outMax : data[Parameter.OutID[i]];
-            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] < Parameter.InitPWM + deadBand) ? Parameter.InitPWM + deadBand : data[Parameter.OutID[i]];
-        }
+
+    float Rol_value_list[3] = {IMU::imu.attitude.rol, Target_roll, angle_diff};
+    for(int i=0; i<3; i++){
+        if(i==2) Output_Data(Rol_value_list[i], 1, 1);
+        else Output_Data(Rol_value_list[i], 0, 1);
     }
+ 
 }
 
 
@@ -678,7 +676,7 @@ float Propeller_I2C::Component_Calc(float data)
 void Propeller_I2C::Output_Data(float data, bool flag, bool is_angle){
     // 根据数据是不是角度来选择如何进行第一步处理
     int data_tmp;
-    if(is_angle) data_tmp = (int)(data * 1000 * 180 / 3.14f);
+    if(is_angle) data_tmp = (int)(rad2deg(data)*1000);
     else data_tmp = (int)(data * 1000);
     
     int data_digit[6];
@@ -706,32 +704,4 @@ void Propeller_I2C::Output_Data(float data, bool flag, bool is_angle){
     HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0xffff);
 }
 
-// void Propeller_I2C::Output_YawData(float data, bool flag){
-//     int data_tmp;
-//     data_tmp = (int)(data * 1000 * 180 / 3.14f);
-    
-//     int data_digit[6];
-//     bool IsPositive = true;
-//     uint8_t TxBuffer[9];
-//     TxBuffer[0] = ' ';
-//     for (int i = 0; i < 6; ++i)
-//     {
-//     if (data_tmp < 0) {
-//             TxBuffer[0] = '-';
-//         data_tmp = -data_tmp;
-//     }
-//         data_digit[i] = data_tmp % 10;
-//         data_tmp /= 10;
-//     }
-//     TxBuffer[1] = '0' + data_digit[5];
-//     TxBuffer[2] = '0' + data_digit[4];
-//     TxBuffer[3] = '0' + data_digit[3];
-//     TxBuffer[4] = '.';
-//     TxBuffer[5] = '0' + data_digit[2];
-//     TxBuffer[6] = '0' + data_digit[1];
-//     TxBuffer[7] = '0' + data_digit[0];
-//     if (flag) TxBuffer[8] = '\n';
-//     else TxBuffer[8] = ',';
-//     HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0xffff);
-// }
 // 死区为1450-1550
