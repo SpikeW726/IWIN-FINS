@@ -5,6 +5,7 @@
 #include "Sensor.h"
 #include "IMU.h"
 #include "algorithm"
+#define pi 3.14f
 
 // extern IMU imu;
 // IMU imu = IMU::imu;
@@ -492,11 +493,8 @@ void Propeller_I2C::angle_ctrl()
     float deadZone = 1.0; //degree
     int deadBand = 100;
     int outMax = 120;
-    // pi
-    float pi = 3.14f;
     //debug
     int i = 0;
-    float temp = 0;
     uint8_t TxBuffer[6] = {0};
 
     // // filter imu.attitude.yaw为弧度制
@@ -581,9 +579,94 @@ void Propeller_I2C::angle_ctrl()
 
 }
 
-// 原地横滚控制
-void Propeller_I2C::roll_ctrl(){
+float deg2rad(float degree){
+    return degree * pi / 180;
+}
 
+float rad2deg(float rad){
+    return rad * 180 / pi;
+}
+
+// 原地横滚控制 从运行方向看顺时针旋转roll角为正 180和-180为同一位置，会发生突变
+void Propeller_I2C::roll_ctrl(){
+    Component.Depth = DepthPID.PIDCalc(Target_depth, PressureSensor::pressure_sensor.data_depth);
+    Component.Pitch = PitchPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_pitch);
+    
+    /*roll角控制*/
+    // used by pre-process
+    float switich_target_bar = deg2rad(10);
+    // used by filter
+    float filter_rate = 0.8;
+    bool useFilter = false;
+    static float last_angle_diff = 0;
+    static float new_angle_diff = 0;
+    float angle_diff = 0;
+    // used by post-process
+    float factor = 2.0;
+    float deadZone = 1.0; //degree
+    int deadBand = 100;
+    int outMax = 120;
+    //debug
+    int i = 0;
+    uint8_t TxBuffer[6] = {0};
+
+    
+    if(useFilter){
+        new_angle_diff = IMU::imu.attitude.rol - Target_roll;
+        angle_diff = new_angle_diff*(1-filter_rate) + last_angle_diff*filter_rate;
+        last_angle_diff = new_angle_diff;
+    }
+    else angle_diff = IMU::imu.attitude.rol - Target_roll;
+
+    // pre-process
+    if(angle_diff > pi) angle_diff = -(2*pi - angle_diff);
+    if(angle_diff < -pi) angle_diff = (2*pi + angle_diff);
+
+    if(fabs(angle_diff) < switich_target_bar){
+        Target_roll += deg2rad(60);
+        if(Target_roll > pi){
+            Target_roll = -(2*pi - Target_roll);
+        }
+    }
+
+
+    // pid
+    Component.Roll_angle = YawAnglePID.PIDCalc(0, angle_diff);
+
+    // post-process
+    switch (Robot_Version) 
+    {
+        //可以根据不同版本调整螺旋桨方向（改变这个正负号 ↓）
+    case V31: // 正负号疑似有问题
+        data[Parameter.OutID[0]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[1]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[2]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[3]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        break;
+    case V33: // 正负号已确定无误
+        data[Parameter.OutID[0]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[0]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[1]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[1]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[2]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[2]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[3]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[3]] * Component.Yaw_angle * factor;
+        break;
+    default:
+        data[Parameter.OutID[0]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[1]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[2]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[3]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        break;
+    }
+    // output limit min and max
+    for (int i = 0; i < 4; i++){
+        if(data[Parameter.OutID[i]] < Parameter.InitPWM - 10){
+            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] < Parameter.InitPWM - outMax) ? Parameter.InitPWM - outMax : data[Parameter.OutID[i]];
+            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] > Parameter.InitPWM - deadBand) ? Parameter.InitPWM - deadBand : data[Parameter.OutID[i]];
+        }
+        if(data[Parameter.OutID[i]] > Parameter.InitPWM + 10){
+            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] > Parameter.InitPWM + outMax) ? Parameter.InitPWM + outMax : data[Parameter.OutID[i]];
+            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] < Parameter.InitPWM + deadBand) ? Parameter.InitPWM + deadBand : data[Parameter.OutID[i]];
+        }
+    }
 }
 
 
