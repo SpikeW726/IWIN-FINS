@@ -5,6 +5,7 @@
 #include "Sensor.h"
 #include "IMU.h"
 #include "algorithm"
+#include "cmath"
 #define pi 3.14f
 
 // extern IMU imu;
@@ -637,20 +638,34 @@ void Propeller_I2C::roll_ctrl(){
     switch (Robot_Version) 
     {
         //可以根据不同版本调整螺旋桨方向（改变这个正负号 ↓）
-    case V33: // 正负号已确认正确
-        if(IMU::imu.attitude.rol > deg2rad(90) || IMU::imu.attitude.rol < deg2rad(-90)){
-            data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V33[Parameter.InID[0]] * (Component.Depth + Component.Roll - Component.Pitch);  
-            data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V33[Parameter.InID[1]] * (Component.Depth + Component.Roll + Component.Pitch);  
-            data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V33[Parameter.InID[2]] * (Component.Depth - Component.Roll - Component.Pitch);  
-            data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V33[Parameter.InID[3]] * (Component.Depth - Component.Roll + Component.Pitch);
+    case V33: {// 正负号已确认正确
+        // if(IMU::imu.attitude.rol > deg2rad(90) || IMU::imu.attitude.rol < deg2rad(-90)){
+        //     data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V33[Parameter.InID[0]] * (Component.Depth + Component.Roll - Component.Pitch);  
+        //     data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V33[Parameter.InID[1]] * (Component.Depth + Component.Roll + Component.Pitch);  
+        //     data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V33[Parameter.InID[2]] * (Component.Depth - Component.Roll - Component.Pitch);  
+        //     data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V33[Parameter.InID[3]] * (Component.Depth - Component.Roll + Component.Pitch);
+        // }
+        // else{
+        //     data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V33[Parameter.InID[0]] * (-Component.Depth + Component.Roll - Component.Pitch);  
+        //     data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V33[Parameter.InID[1]] * (-Component.Depth + Component.Roll + Component.Pitch);  
+        //     data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V33[Parameter.InID[2]] * (-Component.Depth - Component.Roll - Component.Pitch);  
+        //     data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V33[Parameter.InID[3]] * (-Component.Depth - Component.Roll + Component.Pitch);
+        // }
+        float factor = cos(IMU::imu.attitude.rol);
+        if(factor < 0.1 && factor > 0){
+            factor = 0.1;
         }
-        else{
-            data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V33[Parameter.InID[0]] * (-Component.Depth + Component.Roll - Component.Pitch);  
-            data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V33[Parameter.InID[1]] * (-Component.Depth + Component.Roll + Component.Pitch);  
-            data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V33[Parameter.InID[2]] * (-Component.Depth - Component.Roll - Component.Pitch);  
-            data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V33[Parameter.InID[3]] * (-Component.Depth - Component.Roll + Component.Pitch);
+        else if (factor > -0.1 && factor < 0){
+            factor = -0.1;
         }
+        
+        data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V33[Parameter.InID[0]] * (Component.Depth/factor + Component.Roll*2 - Component.Pitch);  
+        data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V33[Parameter.InID[1]] * (Component.Depth/factor + Component.Roll*2 + Component.Pitch);  
+        data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V33[Parameter.InID[2]] * (Component.Depth/factor - Component.Roll*2 - Component.Pitch);  
+        data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V33[Parameter.InID[3]] * (Component.Depth/factor - Component.Roll*2 + Component.Pitch);
+        
         break;
+    }
     default:
         data[Parameter.OutID[0]] = Parameter.InitPWM + Component.Roll_angle * factor;
         data[Parameter.OutID[1]] = Parameter.InitPWM + Component.Roll_angle * factor;
