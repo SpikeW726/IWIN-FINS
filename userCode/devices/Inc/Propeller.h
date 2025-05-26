@@ -65,6 +65,8 @@ private:
     bool flag_range;
     bool flag_roll;
     bool flag_PWM_output;
+    int roll_state;
+    int roll_state_total;
     PID DepthPID, RollPID, PitchPID;
     PID VxPID, VyPID, YawPID;
     PID RollAnglePID, PitchAnglePID, YawAnglePID;
@@ -73,6 +75,8 @@ private:
     void speed_ctrl();
     void angle_ctrl();
     void roll_ctrl();
+    float deg2rad(float);
+    float rad2deg(float);
 
     float Component_Calc(float data);
     void OutputData_single(int id);
