@@ -101,6 +101,7 @@ Propeller_Parameter_t Parameter_V32(InID_V32, OutID_V32, InitPWM_V32, PWM_V32, D
 
 // V33
 int32_t Sign_V33[8] = {1, -1, 1, 1, -1, -1, 1, -1}; // 推进器正反桨，正1反-1，序号为推进器序号
+// int32_t Sign_V33[8] = {1, 1, -1, 1, -1, 1, -1, -1}; // 修改了内圈4个推进器的符号
 
 //int32_t InID_V33[4] = {1, 2, 6, 4};                 // V33-0内部的4个推进器接到扩展板上的序号，左前-左后-右前-右后
 //int32_t OutID_V33[4] = {0, 3, 7, 5};                // V33-0外部的4个推进器接到扩展板上的序号，左前-左后-右前-右后
@@ -110,7 +111,7 @@ int32_t OutID_V33[4] = {0, 3, 7, 4};                // V33-1,2外部的4个推�
 //int32_t InitPWM_V33 = 1610;
 //int32_t Deadband_V33 = 120;
 // V33-2
-int32_t InitPWM_V33 = 1540; // 推进器不转的PWM
+int32_t InitPWM_V33 = 1540; // 推进器不转的PWM 测试前是1540
 int32_t Deadband_V33 = 120;
 
 int32_t PWM_V33[7][4] = { // 调试出来的各种状态PWM,第一行是悬浮
@@ -123,21 +124,43 @@ int32_t PWM_V33[7][4] = { // 调试出来的各种状态PWM,第一行是悬浮
     {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 70}      // AntiClockWise
 };
 
-// PID_Regulator_t DepthPID_V32(20, 0.005, 100, 100, 100, 100, 200);
-// PID_Regulator_t PitchPID_V32(10,/*5*/ 0.01, 100, 100, 100, 100, 200);
-// PID_Regulator_t RollPID_V32(2.5, /*2.5*/ 0.01, 100, 100, 100, 100, 200);
-
 PID_Regulator_t DepthPID_V33(20, 0.015, 33, 100, 50, 50, 200);
 PID_Regulator_t PitchPID_V33(10, /*5*/ 0.03, 33, 50, 25, 25, 100);
 PID_Regulator_t RollPID_V33(2.5, /*2.5*/ 0.03, 33, 50, 25, 25, 100);
-// PID_Regulator_t DepthPID_V31(20, 0.005, 10, 100, 100, 100, 200);
-// PID_Regulator_t PitchPID_V31(40,/*5*/ 0.02, 300, 100, 100, 100, 200);
-// PID_Regulator_t RollPID_V31(20,/*2.5*/ 0.01, 150, 200, 100, 100, 200);
 
 PID_Regulator_t YawPID_V33(12, 0.06, 300, 10, 100, 50, 300);
 // PID_Regulator_t YawPID_V33(10, 0.0001, 50, 10, 100, 100, 300);
 
 Propeller_Parameter_t Parameter_V33(InID_V33, OutID_V33, InitPWM_V33, PWM_V33, DepthPID_V33, PitchPID_V33, RollPID_V33, YawPID_V33);
+
+
+// V40
+int32_t Sign_V40[8] = {1, 1, -1, 1, -1, 1, -1, -1}; // 推进器正反桨，正1反-1，序号为推进器序号
+
+int32_t InID_V40[4] = {1, 2, 6, 5};                 // V33-1,2内部的4个推进器接到扩展板上的序号，左前-左后-右前-右后
+int32_t OutID_V40[4] = {0, 3, 7, 4};                // V33-1,2外部的4个推进器接到扩展板上的序号，左前-左后-右前-右后
+
+int32_t InitPWM_V40 = 1600; // 推进器初始化的PWM
+int32_t Deadband_V40 = 120;
+
+int32_t PWM_V40[7][4] = { // 调试出来的各种状态PWM,第一行是悬浮
+    {InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[1]] * 100, InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[3]] * 90},                                                                                                                             // Base
+    {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 90}, // Front
+    {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Back
+    {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Left
+    {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 90}, // Right
+    {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 70, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 70, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 70, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 70}, // ClockWise
+    {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 70, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 70, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 70, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 70}  // AntiClockWise
+};
+
+PID_Regulator_t DepthPID_V40(20, 0.015, 33, 100, 50, 50, 200);
+PID_Regulator_t PitchPID_V40(10, 0.03, 33, 50, 25, 25, 100);
+PID_Regulator_t RollPID_V40(2.5, 0.03, 33, 50, 25, 25, 100);
+
+PID_Regulator_t YawPID_V40(12, 0.06, 300, 10, 100, 50, 300);
+
+Propeller_Parameter_t Parameter_V40(InID_V40, OutID_V40, InitPWM_V40, PWM_V40, DepthPID_V40, PitchPID_V40, RollPID_V40, YawPID_V40);
+
 
 void Propeller_I2C::Init()
 {
@@ -156,7 +179,12 @@ void Propeller_I2C::Init()
     case V33:
         std::memcpy(&Parameter, &Parameter_V33, sizeof(Propeller_Parameter_t));
         break;
+    case V40:
+        std::memcpy(&Parameter, &Parameter_V40, sizeof(Propeller_Parameter_t));
+        break;
     }
+
+
     DepthPID.PIDInfo = Parameter.DepthPID_P;
     PitchPID.PIDInfo = Parameter.PitchPID_P;
     RollPID.PIDInfo = Parameter.RollPID_P;
@@ -351,7 +379,9 @@ void Propeller_I2C::Receive()
 
         // 更新为给定的PWM
         if (strncmp((char *)RxBuffer, "TES:", 4) == 0)
-        {
+        {   
+            uint8_t TxBuffer[] = {'O','k'};
+            HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0x00ff);
             char *data_str = (char *)RxBuffer + 4;
             char *token = strtok(data_str, ",");
             int i = 0;
