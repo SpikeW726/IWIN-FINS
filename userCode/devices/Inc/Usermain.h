@@ -62,7 +62,8 @@ typedef enum{
     V30,
     V31,
     V32,
-    V33
+    V33,
+    V40
 } VERSION_E;
 
 extern VERSION_E Robot_Version;

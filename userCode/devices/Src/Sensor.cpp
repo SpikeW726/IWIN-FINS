@@ -79,6 +79,9 @@ void PressureSensor::Handle()
         case V33:
             // flag_read_pres = true;
             break;
+        case V40:
+            // flag_read_pres = true;
+            break;
         }
 
         if (flag_read_pres)
@@ -140,6 +143,11 @@ void PressureSensor::Handle()
         data_pitch = data_pressure[3] + data_pressure[1] - data_pressure[2] - data_pressure[0];
         break;
     case V33:
+        data_depth = (data_pressure[3] + data_pressure[2] + data_pressure[1] + data_pressure[0]) / 4;
+        data_roll = data_pressure[0] + data_pressure[1] - data_pressure[2] - data_pressure[3];
+        data_pitch = data_pressure[0] + data_pressure[3] - data_pressure[1] - data_pressure[2];
+        break;
+    case V40: // 0-3依次为:右前,右后,左后,左前
         data_depth = (data_pressure[3] + data_pressure[2] + data_pressure[1] + data_pressure[0]) / 4;
         data_roll = data_pressure[0] + data_pressure[1] - data_pressure[2] - data_pressure[3];
         data_pitch = data_pressure[0] + data_pressure[3] - data_pressure[1] - data_pressure[2];
@@ -348,13 +356,19 @@ void PressureSensor::Init_single(int id)
         data_pressure_offset[1] = PRESSURE_1_V32;
         data_pressure_offset[2] = PRESSURE_2_V32;
         data_pressure_offset[3] = PRESSURE_3_V32;
-		    break;
+		break;
     case V33:
         data_pressure_offset[0] = PRESSURE_0_V33;
         data_pressure_offset[1] = PRESSURE_1_V33;
         data_pressure_offset[2] = PRESSURE_2_V33;
         data_pressure_offset[3] = PRESSURE_3_V33;
-		    break;
+		break;
+    case V40:
+        data_pressure_offset[0] = PRESSURE_0_V40;
+        data_pressure_offset[1] = PRESSURE_1_V40;
+        data_pressure_offset[2] = PRESSURE_2_V40;
+        data_pressure_offset[3] = PRESSURE_3_V40;
+		break;
     }
 }
 

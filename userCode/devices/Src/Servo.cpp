@@ -7,6 +7,7 @@ int32_t ID_V30[4] = {8, 9, 10, 11}; // 4个舵机接在PWM扩展板的编号，�
 int32_t ID_V31[4] = {8, 9, 10, 11};
 int32_t ID_V32[4] = {8, 9, 11, 10};
 int32_t ID_V33[4] = {8, 9, 10, 11};
+int32_t ID_V40[4] = {8, 9, 10, 11}; // 还需测试
 
 void Servo::Init()
 {
@@ -36,6 +37,9 @@ void Servo_I2C::Init()
         break;
     case V33:
         std::memcpy(ID, ID_V33, sizeof(ID));
+        break;
+    case V40:
+        std::memcpy(ID, ID_V40, sizeof(ID));
         break;
     }
     TCA_SetChannel(4);

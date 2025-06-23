@@ -49,6 +49,11 @@
 #define PRESSURE_2_V33 1003.028
 #define PRESSURE_3_V33 1003.799
 
+#define PRESSURE_0_V40 1003.599
+#define PRESSURE_1_V40 1004.981
+#define PRESSURE_2_V40 1004.411
+#define PRESSURE_3_V40 1003.102
+
 typedef struct Sensor_Site{
     float x[SENSOR_NUM];
     float y[SENSOR_NUM];

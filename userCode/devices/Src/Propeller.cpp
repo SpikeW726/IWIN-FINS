@@ -101,7 +101,6 @@ Propeller_Parameter_t Parameter_V32(InID_V32, OutID_V32, InitPWM_V32, PWM_V32, D
 
 // V33
 int32_t Sign_V33[8] = {1, -1, 1, 1, -1, -1, 1, -1}; // 推进器正反桨，正1反-1，序号为推进器序号
-// int32_t Sign_V33[8] = {1, 1, -1, 1, -1, 1, -1, -1}; // 修改了内圈4个推进器的符号
 
 //int32_t InID_V33[4] = {1, 2, 6, 4};                 // V33-0内部的4个推进器接到扩展板上的序号，左前-左后-右前-右后
 //int32_t OutID_V33[4] = {0, 3, 7, 5};                // V33-0外部的4个推进器接到扩展板上的序号，左前-左后-右前-右后
@@ -145,7 +144,7 @@ int32_t Deadband_V40 = 120;
 
 int32_t PWM_V40[7][4] = { // 调试出来的各种状态PWM,第一行是悬浮
     {InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[1]] * 100, InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[3]] * 90},                                                                                                                             // Base
-    {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 90}, // Front
+    {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 200, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 200, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 200, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 200}, // Front
     {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Back
     {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Left
     {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 90}, // Right
@@ -154,8 +153,8 @@ int32_t PWM_V40[7][4] = { // 调试出来的各种状态PWM,第一行是悬浮
 };
 
 PID_Regulator_t DepthPID_V40(20, 0.015, 33, 100, 50, 50, 200);
-PID_Regulator_t PitchPID_V40(10, 0.03, 33, 50, 25, 25, 100);
-PID_Regulator_t RollPID_V40(2.5, 0.03, 33, 50, 25, 25, 100);
+PID_Regulator_t PitchPID_V40(20, 0.1, 33, 50, 25, 25, 100);
+PID_Regulator_t RollPID_V40(5, 0.03, 33, 50, 25, 25, 100);
 
 PID_Regulator_t YawPID_V40(12, 0.06, 300, 10, 100, 50, 300);
 
@@ -509,10 +508,16 @@ void Propeller_I2C::float_ctrl()
         data[Parameter.InID[3]] = Parameter.BasePWM[3] - Component.Depth + Component.Roll + Component.Pitch;
         break;
     case V33:
-        data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V33[Parameter.InID[0]] * (-Component.Depth - Component.Roll - Component.Pitch);  // -1  与V31相反
-        data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V33[Parameter.InID[1]] * (-Component.Depth - Component.Roll + Component.Pitch);  // 1   与V31相同
-        data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V33[Parameter.InID[2]] * (-Component.Depth + Component.Roll - Component.Pitch);  // 1   与V31相同
-        data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V33[Parameter.InID[3]] * (-Component.Depth + Component.Roll + Component.Pitch);  // -1  与V31相同
+        data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V33[Parameter.InID[0]] * (-Component.Depth - Component.Roll - Component.Pitch);
+        data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V33[Parameter.InID[1]] * (-Component.Depth - Component.Roll + Component.Pitch);
+        data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V33[Parameter.InID[2]] * (-Component.Depth + Component.Roll - Component.Pitch);
+        data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V33[Parameter.InID[3]] * (-Component.Depth + Component.Roll + Component.Pitch);
+        break;
+    case V40:
+        data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V40[Parameter.InID[0]] * (-Component.Depth - Component.Roll - Component.Pitch);
+        data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V40[Parameter.InID[1]] * (-Component.Depth - Component.Roll + Component.Pitch);
+        data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V40[Parameter.InID[2]] * (-Component.Depth + Component.Roll - Component.Pitch);
+        data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V40[Parameter.InID[3]] * (-Component.Depth + Component.Roll + Component.Pitch);
         break;
     }
 }
@@ -593,7 +598,7 @@ void Propeller_I2C::angle_ctrl()
         data[Parameter.OutID[3]] = Parameter.InitPWM + Component.Yaw_angle * factor;
         break;
     case V33: // 正负号已确定无误
-        if(IMU::imu.attitude.rol > deg2rad(90) || IMU::imu.attitude.rol > deg2rad(90)){
+        if(IMU::imu.attitude.rol > deg2rad(90) || IMU::imu.attitude.rol < deg2rad(-90)){
             data[Parameter.OutID[0]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[0]] * Component.Yaw_angle * factor;
             data[Parameter.OutID[1]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[1]] * Component.Yaw_angle * factor;
             data[Parameter.OutID[2]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[2]] * Component.Yaw_angle * factor;
@@ -607,6 +612,13 @@ void Propeller_I2C::angle_ctrl()
             data[Parameter.OutID[3]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[3]] * Component.Yaw_angle * factor;
             break;
         }
+        case V40:
+        data[Parameter.OutID[0]] = Parameter.InitPWM + Sign_V40[Parameter.OutID[0]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[1]] = Parameter.InitPWM + Sign_V40[Parameter.OutID[1]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[2]] = Parameter.InitPWM - Sign_V40[Parameter.OutID[2]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[3]] = Parameter.InitPWM - Sign_V40[Parameter.OutID[3]] * Component.Yaw_angle * factor;
+        break;
+
     default:
         data[Parameter.OutID[0]] = Parameter.InitPWM + Component.Yaw_angle * factor;
         data[Parameter.OutID[1]] = Parameter.InitPWM + Component.Yaw_angle * factor;
@@ -702,14 +714,6 @@ void Propeller_I2C::roll_ctrl(){
 
     // pid
     Component.Roll = RollPID.PIDCalc(0, angle_diff);
-
-    // if(rad2deg(IMU::imu.attitude.rol) > 85 && rad2deg(IMU::imu.attitude.rol) < 95 || rad2deg(IMU::imu.attitude.rol) > -95 && rad2deg(IMU::imu.attitude.rol) < -85){
-    //     Component.Depth = 0;
-    //     // Component.Pitch = 0;
-    //     data[Parameter.OutID[2]] = 
-    //     data[Parameter.OutID[3]] = 
-    // }
-
     
     // post-process
     switch (Robot_Version) 
