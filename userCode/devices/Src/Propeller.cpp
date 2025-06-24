@@ -15,14 +15,15 @@ int32_t InID_V30[4] = {1, 2, 6, 5};  // 内部的4个轮，左前-左后-右前-
 int32_t OutID_V30[4] = {3, 0, 7, 4}; // 外部的4个轮，左前-左后-右前-右后
 int32_t InitPWM_V30 = 1640;
 int32_t Deadband_V30 = 120;
-int32_t PWM_V30[7][4] = {
+int32_t PWM_V30[8][4] = {
     {InitPWM_V30, InitPWM_V30, InitPWM_V30, InitPWM_V30}, // Base
 	{InitPWM_V30 - 100, InitPWM_V30 - 100, InitPWM_V30 + 100, InitPWM_V30 + 100}, // Front
     {InitPWM_V30 + 100, InitPWM_V30 + 100, InitPWM_V30 - 100, InitPWM_V30 - 100}, // Back
     {InitPWM_V30 + 100, InitPWM_V30 - 100, InitPWM_V30 + 100, InitPWM_V30 - 100}, // Left
     {InitPWM_V30 - 100, InitPWM_V30 + 100, InitPWM_V30 - 100, InitPWM_V30 + 100}, // Right
     {InitPWM_V30 - 80, InitPWM_V30 - 80, InitPWM_V30 - 80, InitPWM_V30 - 80}, // ClockWise
-    {InitPWM_V30 + 80, InitPWM_V30 + 80, InitPWM_V30 + 80, InitPWM_V30 + 80}  // AntiClockWise
+    {InitPWM_V30 + 80, InitPWM_V30 + 80, InitPWM_V30 + 80, InitPWM_V30 + 80},  // AntiClockWise
+    {InitPWM_V30, InitPWM_V30, InitPWM_V30, InitPWM_V30} // Stop
     //{1450, 1460, 1600, 1600}, // Front
     //{1600, 1600, 1460, 1470}, // Back
     //{1590, 1455, 1600, 1455}, // Left
@@ -44,14 +45,15 @@ int32_t InID_V31[4] = {4, 5, 7, 6};  // 内部的4个轮，左前-左后-右前-
 int32_t OutID_V31[4] = {1, 0, 2, 3}; // 外部的4个轮，左前-左后-右前-右后
 int32_t InitPWM_V31 = 1550;
 int32_t Deadband_V31 = 100;
-int32_t PWM_V31[7][4] = {
+int32_t PWM_V31[8][4] = {
     {1460, 1400, 1460, 1715}, // Base
     {1650, 1450, 1450, 1650}, // Front
     {1450, 1650, 1650, 1450}, // Back
     {1450, 1450, 1450, 1450}, // Left
     {1650, 1650, 1650, 1650}, // Right
     {1650, 1450, 1650, 1450}, // ClockWise
-    {1450, 1650, 1450, 1650}  // AntiClockWise
+    {1450, 1650, 1450, 1650},  // AntiClockWise
+    {InitPWM_V31, InitPWM_V31, InitPWM_V31, InitPWM_V31} // Stop
 };
 
 PID_Regulator_t DepthPID_V31(20, 0.015, 33, 100, 100, 100, 200);
@@ -74,14 +76,15 @@ int32_t InID_V32[4] = {3, 1, 4, 5};  // 内部的4个轮，左前-左后-右前-
 int32_t OutID_V32[4] = {2, 0, 6, 7}; // 外部的4个轮，左前-左后-右前-右后
 int32_t InitPWM_V32 = 1570;
 int32_t Deadband_V32 = 100;
-int32_t PWM_V32[7][4] = {
+int32_t PWM_V32[8][4] = {
     {1460, 1420, 1640, 1680},                                                                                                                                                         // Base
     {InitPWM_V32 - Sign_V32[OutID_V32[0]] * 150, InitPWM_V32 - Sign_V32[OutID_V32[1]] * 150, InitPWM_V32 - Sign_V32[OutID_V32[2]] * 150, InitPWM_V32 - Sign_V32[OutID_V32[3]] * 150}, // Front
     {InitPWM_V32 + Sign_V32[OutID_V32[0]] * 150, InitPWM_V32 + Sign_V32[OutID_V32[1]] * 150, InitPWM_V32 + Sign_V32[OutID_V32[2]] * 150, InitPWM_V32 + Sign_V32[OutID_V32[3]] * 150}, // Back
     {InitPWM_V32 + Sign_V32[OutID_V32[0]] * 150, InitPWM_V32 - Sign_V32[OutID_V32[1]] * 150, InitPWM_V32 - Sign_V32[OutID_V32[2]] * 150, InitPWM_V32 + Sign_V32[OutID_V32[3]] * 150}, // Left
     {InitPWM_V32 - Sign_V32[OutID_V32[0]] * 150, InitPWM_V32 + Sign_V32[OutID_V32[1]] * 150, InitPWM_V32 + Sign_V32[OutID_V32[2]] * 150, InitPWM_V32 - Sign_V32[OutID_V32[3]] * 150}, // Right
     {InitPWM_V32 - Sign_V32[OutID_V32[0]] * 100, InitPWM_V32 - Sign_V32[OutID_V32[1]] * 100, InitPWM_V32 + Sign_V32[OutID_V32[2]] * 100, InitPWM_V32 + Sign_V32[OutID_V32[3]] * 100}, // ClockWise
-    {InitPWM_V32 + Sign_V32[OutID_V32[0]] * 100, InitPWM_V32 + Sign_V32[OutID_V32[1]] * 100, InitPWM_V32 - Sign_V32[OutID_V32[2]] * 100, InitPWM_V32 - Sign_V32[OutID_V32[3]] * 100}  // AntiClockWise
+    {InitPWM_V32 + Sign_V32[OutID_V32[0]] * 100, InitPWM_V32 + Sign_V32[OutID_V32[1]] * 100, InitPWM_V32 - Sign_V32[OutID_V32[2]] * 100, InitPWM_V32 - Sign_V32[OutID_V32[3]] * 100}, // AntiClockWise
+    {InitPWM_V32, InitPWM_V32, InitPWM_V32, InitPWM_V32} // Stop
 };
 
 // PID_Regulator_t DepthPID_V32(20, 0.005, 100, 100, 100, 100, 200);
@@ -113,14 +116,15 @@ int32_t OutID_V33[4] = {0, 3, 7, 4};                // V33-1,2外部的4个推�
 int32_t InitPWM_V33 = 1540; // 推进器不转的PWM 测试前是1540
 int32_t Deadband_V33 = 120;
 
-int32_t PWM_V33[7][4] = { // 调试出来的各种状态PWM,第一行是悬浮
+int32_t PWM_V33[8][4] = { // 调试出来的各种状态PWM,第一行是悬浮
     {InitPWM_V33, InitPWM_V33 - Sign_V33[InID_V33[1]] * 100, InitPWM_V33, InitPWM_V33 - Sign_V33[InID_V33[3]] * 90},                                                                                                                             // Base
     {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 90}, // Front
     {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 90}, // Back
     {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 90}, // Left
     {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 90, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 90, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 90}, // Right
     {InitPWM_V33 - Sign_V33[OutID_V33[0]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[1]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[2]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[3]] * 70},     // ClockWise
-    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 70}      // AntiClockWise
+    {InitPWM_V33 + Sign_V33[OutID_V33[0]] * 70, InitPWM_V33 + Sign_V33[OutID_V33[1]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[2]] * 70, InitPWM_V33 - Sign_V33[OutID_V33[3]] * 70},     // AntiClockWise
+    {InitPWM_V33, InitPWM_V33, InitPWM_V33, InitPWM_V33} // Stop
 };
 
 PID_Regulator_t DepthPID_V33(20, 0.015, 33, 100, 50, 50, 200);
@@ -142,14 +146,15 @@ int32_t OutID_V40[4] = {0, 3, 7, 4};                // V33-1,2外部的4个推�
 int32_t InitPWM_V40 = 1600; // 推进器初始化的PWM
 int32_t Deadband_V40 = 120;
 
-int32_t PWM_V40[7][4] = { // 调试出来的各种状态PWM,第一行是悬浮
+int32_t PWM_V40[8][4] = { // 调试出来的各种状态PWM,第一行是悬浮
     {InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[1]] * 100, InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[3]] * 90},                                                                                                                             // Base
     {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 200, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 200, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 200, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 200}, // Front
     {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Back
     {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Left
     {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 90}, // Right
     {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 70, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 70, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 70, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 70}, // ClockWise
-    {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 70, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 70, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 70, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 70}  // AntiClockWise
+    {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 70, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 70, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 70, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 70}, // AntiClockWise
+    {InitPWM_V40, InitPWM_V40, InitPWM_V40, InitPWM_V40} // Stop
 };
 
 PID_Regulator_t DepthPID_V40(20, 0.015, 33, 100, 50, 50, 200);
@@ -237,12 +242,15 @@ void Propeller_I2C::Receive()
     mp['D'] = Parameter.RightPWM;
     mp['E'] = Parameter.ClockwisePWM;
     mp['Q'] = Parameter.AnticlockwisePWM;
+    mp['X'] = Parameter.StopPWM;
+
 
     if (flag_PID)
     {
         // 更新为前后左右的PWM
         if (mp.count(RxBuffer[0]))
-        {
+        {   
+
             for (int i = 0; i < 4; ++i)
             {
                 data[Parameter.OutID[i]] = mp[RxBuffer[0]][i];
@@ -379,7 +387,7 @@ void Propeller_I2C::Receive()
         // 更新为给定的PWM
         if (strncmp((char *)RxBuffer, "TES:", 4) == 0)
         {   
-            uint8_t TxBuffer[] = {'O','k'};
+            uint8_t TxBuffer[] = {'O','K'};
             HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0x00ff);
             char *data_str = (char *)RxBuffer + 4;
             char *token = strtok(data_str, ",");
