@@ -29,6 +29,8 @@ struct Propeller_Parameter_t{
     PID_Regulator_t PitchPID_P;
     PID_Regulator_t RollPID_P;
     PID_Regulator_t YawPID_P;
+    PID_Regulator_t YawInPID_P;
+    PID_Regulator_t YawOutPID_P;
 
     Propeller_Parameter_t(){};
     Propeller_Parameter_t(int32_t* _InID, int32_t* _OutID, int32_t _InitPWM, int32_t PWM[7][4], PID_Regulator_t _DepthPID_P, PID_Regulator_t _PitchPID_P, PID_Regulator_t _RollPID_P, PID_Regulator_t _YawPID_P):
@@ -37,6 +39,11 @@ struct Propeller_Parameter_t{
     Propeller_Parameter_t(const Propeller_Parameter_t& p){
         memcpy(this, &p, sizeof(Propeller_Parameter_t));
     }
+
+    Propeller_Parameter_t(int32_t* _InID, int32_t* _OutID, int32_t _InitPWM, int32_t PWM[7][4], PID_Regulator_t _DepthPID_P, PID_Regulator_t _PitchPID_P, PID_Regulator_t _RollPID_P, PID_Regulator_t _YawPID_P,
+                            PID_Regulator_t _YawInPID_P, PID_Regulator_t _YawOutPID_P):
+        InID(_InID), OutID(_OutID), InitPWM(_InitPWM), BasePWM(PWM[0]), FrontPWM(PWM[1]), BackPWM(PWM[2]), LeftPWM(PWM[3]), RightPWM(PWM[4]), ClockwisePWM(PWM[5]),
+        AnticlockwisePWM(PWM[6]), DepthPID_P(_DepthPID_P), PitchPID_P(_PitchPID_P), RollPID_P(_RollPID_P), YawPID_P(_YawPID_P), YawInPID_P(_YawInPID_P), YawOutPID_P(_YawOutPID_P){};
 };
 
 typedef struct Propeller_Component{
@@ -69,11 +76,12 @@ private:
     int roll_state_total;
     PID DepthPID, RollPID, PitchPID;
     PID VxPID, VyPID, YawPID;
-    PID RollAnglePID, PitchAnglePID, YawAnglePID;
+    PID RollAnglePID, PitchAnglePID, YawAnglePID, YawInPID, YawOutPID;
 
     void float_ctrl();
     void speed_ctrl();
     void angle_ctrl();
+    void Yaw_ctrl();
     void roll_ctrl();
     float deg2rad(float);
     float rad2deg(float);

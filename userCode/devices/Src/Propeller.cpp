@@ -158,7 +158,10 @@ PID_Regulator_t RollPID_V40(5, 0.03, 33, 50, 25, 25, 100);
 
 PID_Regulator_t YawPID_V40(12, 0.06, 300, 10, 100, 50, 300);
 
-Propeller_Parameter_t Parameter_V40(InID_V40, OutID_V40, InitPWM_V40, PWM_V40, DepthPID_V40, PitchPID_V40, RollPID_V40, YawPID_V40);
+PID_Regulator_t YawInPID_V40(12, 0.06, 300, 10, 100, 50, 300);
+PID_Regulator_t YawOutPId_V40(10, 0, 0, 10, 100, 50, 300);
+
+Propeller_Parameter_t Parameter_V40(InID_V40, OutID_V40, InitPWM_V40, PWM_V40, DepthPID_V40, PitchPID_V40, RollPID_V40, YawPID_V40, YawInPID_V40, YawOutPId_V40);
 
 
 void Propeller_I2C::Init()
@@ -192,6 +195,9 @@ void Propeller_I2C::Init()
     PitchAnglePID.PIDInfo = Parameter.PitchPID_P;
     RollAnglePID.PIDInfo = Parameter.RollPID_P;
     YawAnglePID.PIDInfo = Parameter.YawPID_P;
+
+    YawInPID.PIDInfo = Parameter.YawInPID_P;
+    YawOutPID.PIDInfo = Parameter.YawOutPID_P;
     
     Target_depth = 30;
     Target_angle = 0;
@@ -408,7 +414,7 @@ void Propeller_I2C::Handle()
     }
     
     if (flag_angle) {
-        angle_ctrl(); // 角度控制
+        Yaw_ctrl(); // 角度控制
     }
     
     
@@ -660,6 +666,112 @@ void Propeller_I2C::angle_ctrl()
     //     else Output_YawData(tmp_data[i], 0);
     // }
 
+}
+
+void Propeller_I2C::Yaw_ctrl()
+{
+    float filter_rate = 0.8;
+    bool useFilter = true;
+    static float last_angle_diff = 0;
+    static float new_angle_diff = 0;
+    float angle_diff = 0;
+    static float last_angle_vel_diff = 0;
+    static float new_angle_vel_diff = 0;
+    float angle_vel_diff = 0;
+    float factor = 2.0;
+    int deadBand = 100;
+    int outMax = 120;
+
+    if(useFilter){
+        new_angle_diff = IMU::imu.attitude.yaw - Target_yaw;
+        angle_diff = new_angle_diff*(1-filter_rate) + last_angle_diff*filter_rate;
+        last_angle_diff = new_angle_diff;
+    }
+    else angle_diff = IMU::imu.attitude.yaw - Target_yaw;
+
+    // pre-process
+    if(angle_diff > pi) angle_diff = -(2*pi - angle_diff);
+    if(angle_diff < -pi) angle_diff = (2*pi + angle_diff);
+
+    float targetYawRate = YawInPID.PIDCalc(0, angle_diff);
+
+    float current_yaw = IMU::imu.attitude.yaw_v;
+
+    if (useFilter){
+        new_angle_vel_diff = IMU::imu.attitude.yaw - targetYawRate;
+        angle_vel_diff = new_angle_vel_diff*(1-filter_rate) + last_angle_vel_diff*filter_rate;
+        last_angle_vel_diff = new_angle_vel_diff;
+    }
+    else angle_vel_diff = IMU::imu.attitude.yaw_v - targetYawRate;
+
+    Component.Yaw_angle = YawOutPID.PIDCalc(targetYawRate, angle_vel_diff);
+
+    // post-process
+    switch (Robot_Version) 
+    {
+        //可以根据不同版本调整螺旋桨方向（改变这个正负号 ↓）
+    case V31: // 正负号疑似有问题
+        data[Parameter.OutID[0]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[1]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[2]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[3]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        break;
+    case V33: // 正负号已确定无误
+        if(IMU::imu.attitude.rol > deg2rad(90) || IMU::imu.attitude.rol < deg2rad(-90)){
+            data[Parameter.OutID[0]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[0]] * Component.Yaw_angle * factor;
+            data[Parameter.OutID[1]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[1]] * Component.Yaw_angle * factor;
+            data[Parameter.OutID[2]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[2]] * Component.Yaw_angle * factor;
+            data[Parameter.OutID[3]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[3]] * Component.Yaw_angle * factor;
+            break;
+        }
+        else{
+            data[Parameter.OutID[0]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[0]] * Component.Yaw_angle * factor;
+            data[Parameter.OutID[1]] = Parameter.InitPWM + Sign_V33[Parameter.OutID[1]] * Component.Yaw_angle * factor;
+            data[Parameter.OutID[2]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[2]] * Component.Yaw_angle * factor;
+            data[Parameter.OutID[3]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[3]] * Component.Yaw_angle * factor;
+            break;
+        }
+        case V40:
+        data[Parameter.OutID[0]] = Parameter.InitPWM + Sign_V40[Parameter.OutID[0]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[1]] = Parameter.InitPWM + Sign_V40[Parameter.OutID[1]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[2]] = Parameter.InitPWM - Sign_V40[Parameter.OutID[2]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[3]] = Parameter.InitPWM - Sign_V40[Parameter.OutID[3]] * Component.Yaw_angle * factor;
+        break;
+
+    default:
+        data[Parameter.OutID[0]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[1]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[2]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        data[Parameter.OutID[3]] = Parameter.InitPWM + Component.Yaw_angle * factor;
+        break;
+    }
+    // output limit min and max
+    for (int i = 0; i < 4; i++){
+        if(data[Parameter.OutID[i]] < Parameter.InitPWM - 10){
+            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] < Parameter.InitPWM - outMax) ? Parameter.InitPWM - outMax : data[Parameter.OutID[i]];
+            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] > Parameter.InitPWM - deadBand) ? Parameter.InitPWM - deadBand : data[Parameter.OutID[i]];
+        }
+        if(data[Parameter.OutID[i]] > Parameter.InitPWM + 10){
+            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] > Parameter.InitPWM + outMax) ? Parameter.InitPWM + outMax : data[Parameter.OutID[i]];
+            data[Parameter.OutID[i]] = (data[Parameter.OutID[i]] < Parameter.InitPWM + deadBand) ? Parameter.InitPWM + deadBand : data[Parameter.OutID[i]];
+        }
+    }
+
+    if(flag_PWM_output){
+        // Output PWM value
+        for (int i = 0; i < 4; i++){
+            if(i==3) Output_Data(data[Parameter.OutID[i]], 1, 0);
+            else Output_Data(data[Parameter.OutID[i]], 0, 0);
+        }
+    }
+    else{
+        // Output yaw data
+        float tmp_data[3] = {IMU::imu.attitude.yaw, Target_yaw, angle_diff};
+        for (int i = 0; i < 3; i++){
+            if(i==2) Output_Data(tmp_data[i], 1, 1);
+            else Output_Data(tmp_data[i], 0, 1);
+        }
+    }
 }
 
 float Propeller_I2C::deg2rad(float degree){
