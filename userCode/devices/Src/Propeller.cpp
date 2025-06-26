@@ -163,10 +163,17 @@ PID_Regulator_t RollPID_V40(5, 0.03, 33, 50, 25, 25, 100);
 
 PID_Regulator_t YawPID_V40(12, 0.06, 300, 10, 100, 50, 300);
 
-PID_Regulator_t YawInPID_V40(12, 0, 100, 10, 100, 50, 300);
-PID_Regulator_t YawOutPId_V40(1, 0, 0, 10, 100, 50, 300);
+PID_Regulator_t YawInPID_V40(12, 0.01, 100, 10, 100, 50, 300);
+PID_Regulator_t YawOutPId_V40(1, 0.01, 1, 10, 100, 50, 300);
 
-Propeller_Parameter_t Parameter_V40(InID_V40, OutID_V40, InitPWM_V40, PWM_V40, DepthPID_V40, PitchPID_V40, RollPID_V40, YawPID_V40, YawInPID_V40, YawOutPId_V40);
+PID_Regulator_t RollInPID_V40(5, 0.1, 33, 50, 25, 25, 100);
+PID_Regulator_t RollOutPID_V40(2, 0.05, 5, 50, 25, 25, 100);
+
+PID_Regulator_t PitchInPID_V40(10, 0.2, 33, 50, 25, 25, 100);
+PID_Regulator_t PitchOutPID_V40(2, 0.1, 1, 50, 25, 25, 100);
+
+Propeller_Parameter_t Parameter_V40(InID_V40, OutID_V40, InitPWM_V40, PWM_V40, DepthPID_V40, PitchPID_V40, RollPID_V40, YawPID_V40,
+                    YawInPID_V40, YawOutPId_V40, RollInPID_V40, RollOutPID_V40, PitchInPID_V40, PitchOutPID_V40);
 
 
 void Propeller_I2C::Init()
@@ -203,6 +210,12 @@ void Propeller_I2C::Init()
 
     YawInPID.PIDInfo = Parameter.YawInPID_P;
     YawOutPID.PIDInfo = Parameter.YawOutPID_P;
+
+    RollInPID.PIDInfo = Parameter.RollInPID_P;
+    RollOutPID.PIDInfo = Parameter.RollOutPID_P;
+
+    PitchInPID.PIDInfo = Parameter.PitchInPID_P;
+    PitchOutPID.PIDInfo = Parameter.PitchOutPID_P;
     
     Target_depth = 30;
     Target_angle = 0;
@@ -471,9 +484,71 @@ void Propeller_I2C::OutputData_single(int id)
 void Propeller_I2C::float_ctrl()
 {   
     if(!flag_roll){
+        // To DO: 将roll和pitch的控制也做成双环pid
         Component.Depth = DepthPID.PIDCalc(Target_depth, PressureSensor::pressure_sensor.data_depth);
-        Component.Roll = RollPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_roll);
-        Component.Pitch = PitchPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_pitch);
+
+        float filter_rate = 0.8;
+        bool useFilter = true;
+        static float last_roll_diff = 0;
+        static float new_roll_diff = 0;
+        float roll_diff = 0;
+        static float last_roll_vel_diff = 0;
+        static float new_roll_vel_diff = 0;
+        float roll_vel_diff = 0;
+
+        // pid for roll
+        if (useFilter){
+            new_roll_diff = PressureSensor::pressure_sensor.data_roll;
+            roll_diff = new_roll_diff*(1-filter_rate) + last_roll_diff*filter_rate;
+            last_roll_diff = new_roll_diff;
+        }
+        else roll_diff = PressureSensor::pressure_sensor.data_roll;
+
+        if(roll_diff > pi) roll_diff = -(2*pi - roll_diff);
+        if(roll_diff < -pi) roll_diff = (2*pi + roll_diff);
+
+        float targetRollRate = RollInPID.PIDCalc(0.0, roll_diff);
+
+        if (useFilter){
+            new_roll_vel_diff = IMU::imu.attitude.rol_v - targetRollRate;
+            roll_vel_diff = new_roll_vel_diff*(1-filter_rate) + last_roll_vel_diff*filter_rate;
+            last_roll_vel_diff = new_roll_vel_diff;
+        }
+        else roll_vel_diff = IMU::imu.attitude.rol_v - targetRollRate;
+
+        Component.Roll = RollOutPID.PIDCalc(targetRollRate, roll_vel_diff);
+
+        // Component.Roll = RollPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_roll);
+
+        // pid for pitch
+        static float last_pitch_diff = 0;
+        static float new_pitch_diff = 0;
+        float pitch_diff = 0;
+        static float last_pitch_vel_diff = 0;
+        static float new_pitch_vel_diff = 0;
+        float pitch_vel_diff = 0;
+        if (useFilter){
+            new_pitch_diff = PressureSensor::pressure_sensor.data_pitch;
+            pitch_diff = new_pitch_diff*(1-filter_rate) + last_pitch_diff*filter_rate;
+            last_pitch_diff = new_pitch_diff;
+        }
+        else pitch_diff = PressureSensor::pressure_sensor.data_pitch;
+
+        if(pitch_diff > pi) pitch_diff = -(2*pi - pitch_diff);
+        if(pitch_diff < -pi) pitch_diff = (2*pi + pitch_diff);
+
+        float targetPitchRate = PitchInPID.PIDCalc(0.0, pitch_diff);
+
+        if (useFilter){
+            new_pitch_vel_diff = IMU::imu.attitude.pitch_v - targetPitchRate;
+            pitch_vel_diff = new_pitch_vel_diff*(1-filter_rate) + last_pitch_vel_diff*filter_rate;
+            last_pitch_vel_diff = new_pitch_vel_diff;
+        }
+        else pitch_vel_diff = IMU::imu.attitude.pitch_v - targetPitchRate;
+
+        Component.Pitch = PitchOutPID.PIDCalc(targetPitchRate, pitch_vel_diff);
+
+        // Component.Pitch = PitchPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_pitch);
     }
     else{
         Component.Depth = 0;
@@ -559,7 +634,7 @@ void Propeller_I2C::speed_ctrl()
     data[Parameter.OutID[3]] = 1530 + Component_Calc(-Component.Yaw + Component.Vx - Component.Vy);
 }
 
-// 控制Yaw
+// 单环pid控制Yaw
 void Propeller_I2C::angle_ctrl()
 {
     // used by filter
@@ -675,6 +750,7 @@ void Propeller_I2C::angle_ctrl()
 
 }
 
+// 双环pid控制Yaw角
 void Propeller_I2C::Yaw_ctrl()
 {
     float filter_rate = 0.8;
@@ -700,12 +776,12 @@ void Propeller_I2C::Yaw_ctrl()
     if(angle_diff > pi) angle_diff = -(2*pi - angle_diff);
     if(angle_diff < -pi) angle_diff = (2*pi + angle_diff);
 
-    float targetYawRate = YawInPID.PIDCalc(0, angle_diff);
+    float targetYawRate = YawInPID.PIDCalc(0.0, angle_diff);
 
-    float current_yaw = IMU::imu.attitude.yaw_v;
+    // float current_yaw = IMU::imu.attitude.yaw_v;
 
     if (useFilter){
-        new_angle_vel_diff = IMU::imu.attitude.yaw - targetYawRate;
+        new_angle_vel_diff = IMU::imu.attitude.yaw_v - targetYawRate;
         angle_vel_diff = new_angle_vel_diff*(1-filter_rate) + last_angle_vel_diff*filter_rate;
         last_angle_vel_diff = new_angle_vel_diff;
     }

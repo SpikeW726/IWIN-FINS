@@ -33,6 +33,12 @@ struct Propeller_Parameter_t{
     PID_Regulator_t YawInPID_P;
     PID_Regulator_t YawOutPID_P;
 
+    PID_Regulator_t RollInPID_P;
+    PID_Regulator_t RollOutPID_P;
+
+    PID_Regulator_t PitchInPID_P;
+    PID_Regulator_t PitchOutPID_P;
+
     Propeller_Parameter_t(){};
     Propeller_Parameter_t(int32_t* _InID, int32_t* _OutID, int32_t _InitPWM, int32_t PWM[8][4], PID_Regulator_t _DepthPID_P, PID_Regulator_t _PitchPID_P, PID_Regulator_t _RollPID_P, PID_Regulator_t _YawPID_P):
         InID(_InID), OutID(_OutID), InitPWM(_InitPWM), BasePWM(PWM[0]), FrontPWM(PWM[1]), BackPWM(PWM[2]), LeftPWM(PWM[3]), RightPWM(PWM[4]), ClockwisePWM(PWM[5]),
@@ -42,9 +48,10 @@ struct Propeller_Parameter_t{
     }
 
     Propeller_Parameter_t(int32_t* _InID, int32_t* _OutID, int32_t _InitPWM, int32_t PWM[8][4], PID_Regulator_t _DepthPID_P, PID_Regulator_t _PitchPID_P, PID_Regulator_t _RollPID_P, PID_Regulator_t _YawPID_P,
-                            PID_Regulator_t _YawInPID_P, PID_Regulator_t _YawOutPID_P):
+                            PID_Regulator_t _YawInPID_P, PID_Regulator_t _YawOutPID_P, PID_Regulator_t _RollInPID_P, PID_Regulator_t _RollOutPID_P, PID_Regulator_t _PitchInPID_P, PID_Regulator_t _PitchOutPID_P):
         InID(_InID), OutID(_OutID), InitPWM(_InitPWM), BasePWM(PWM[0]), FrontPWM(PWM[1]), BackPWM(PWM[2]), LeftPWM(PWM[3]), RightPWM(PWM[4]), ClockwisePWM(PWM[5]),
-        AnticlockwisePWM(PWM[6]), StopPWM(PWM[7]), DepthPID_P(_DepthPID_P), PitchPID_P(_PitchPID_P), RollPID_P(_RollPID_P), YawPID_P(_YawPID_P), YawInPID_P(_YawInPID_P), YawOutPID_P(_YawOutPID_P){};
+        AnticlockwisePWM(PWM[6]), StopPWM(PWM[7]), DepthPID_P(_DepthPID_P), PitchPID_P(_PitchPID_P), RollPID_P(_RollPID_P), YawPID_P(_YawPID_P), YawInPID_P(_YawInPID_P), YawOutPID_P(_YawOutPID_P),
+        RollInPID_P(_RollInPID_P), RollOutPID_P(_RollOutPID_P), PitchInPID_P(_PitchInPID_P), PitchOutPID_P(_PitchOutPID_P){};
 };
 
 typedef struct Propeller_Component{
@@ -78,6 +85,8 @@ private:
     PID DepthPID, RollPID, PitchPID;
     PID VxPID, VyPID, YawPID;
     PID RollAnglePID, PitchAnglePID, YawAnglePID, YawInPID, YawOutPID;
+    PID RollInPID, RollOutPID;
+    PID PitchInPID, PitchOutPID;
 
     void float_ctrl();
     void speed_ctrl();
