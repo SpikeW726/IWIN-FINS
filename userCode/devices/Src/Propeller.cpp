@@ -148,7 +148,7 @@ int32_t Deadband_V40 = 120;
 
 int32_t PWM_V40[8][4] = { // 调试出来的各种状态PWM,第一行是悬浮
     {InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[1]] * 100, InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[3]] * 90},                                                                                                                             // Base
-    {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 200, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 200, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 200, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 200}, // Front
+    {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 100, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 100, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 100, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 100}, // Front
     {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Back
     {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Left
     {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 90}, // Right
@@ -163,8 +163,8 @@ PID_Regulator_t RollPID_V40(5, 0.03, 33, 50, 25, 25, 100);
 
 PID_Regulator_t YawPID_V40(12, 0.06, 300, 10, 100, 50, 300);
 
-PID_Regulator_t YawInPID_V40(12, 0.06, 300, 10, 100, 50, 300);
-PID_Regulator_t YawOutPId_V40(10, 0, 0, 10, 100, 50, 300);
+PID_Regulator_t YawInPID_V40(12, 0, 100, 10, 100, 50, 300);
+PID_Regulator_t YawOutPId_V40(1, 0, 0, 10, 100, 50, 300);
 
 Propeller_Parameter_t Parameter_V40(InID_V40, OutID_V40, InitPWM_V40, PWM_V40, DepthPID_V40, PitchPID_V40, RollPID_V40, YawPID_V40, YawInPID_V40, YawOutPId_V40);
 
@@ -256,7 +256,6 @@ void Propeller_I2C::Receive()
         // 更新为前后左右的PWM
         if (mp.count(RxBuffer[0]))
         {   
-
             for (int i = 0; i < 4; ++i)
             {
                 data[Parameter.OutID[i]] = mp[RxBuffer[0]][i];
