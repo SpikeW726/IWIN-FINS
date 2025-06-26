@@ -8,8 +8,9 @@
 #include "cmath"
 #define pi 3.14f
 
-// extern IMU imu;
-// IMU imu = IMU::imu;
+unordered_map<char, Motion_State> msg_state_map;
+unordered_map<Motion_State, int32_t *, MotionStateHash, MotionStateEqual> state_PWM_map;
+
 // V30
 int32_t InID_V30[4] = {1, 2, 6, 5};  // 内部的4个轮，左前-左后-右前-右后
 int32_t OutID_V30[4] = {3, 0, 7, 4}; // 外部的4个轮，左前-左后-右前-右后
@@ -149,7 +150,7 @@ int32_t Deadband_V40 = 120;
 int32_t PWM_V40[8][4] = { // 调试出来的各种状态PWM,第一行是悬浮
     {InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[1]] * 100, InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[3]] * 90},                                                                                                                             // Base
     {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 100, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 100, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 100, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 100}, // Front
-    {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Back
+    {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 100, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 100, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 100, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 100}, // Back
     {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Left
     {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 90}, // Right
     {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 70, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 70, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 70, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 70}, // ClockWise
@@ -229,6 +230,18 @@ void Propeller_I2C::Init()
     flag_PWM_output = false;
     roll_state = 0;
     roll_state_total = 1;
+    motion_state = FLOAT;
+
+    msg_state_map['W'] = FRONT;
+    msg_state_map['S'] = BACK;
+    msg_state_map['A'] = LEFT;
+    msg_state_map['D'] = RIGHT;
+    msg_state_map['X'] = FLOAT;
+    state_PWM_map[FRONT] = Parameter.FrontPWM;
+    state_PWM_map[BACK] = Parameter.BackPWM;
+    state_PWM_map[LEFT] = Parameter.LeftPWM;
+    state_PWM_map[RIGHT] = Parameter.RightPWM;
+    state_PWM_map[FLOAT] = Parameter.StopPWM;
 
     TCA_SetChannel(4); // 1路 I2C 扩展为 8路
     HAL_Delay(5);
@@ -252,26 +265,25 @@ void Propeller_I2C::Init()
 // 根据串口指令设置PWM参数
 void Propeller_I2C::Receive()
 {
-
     int32_t data_receive[8];
-    unordered_map<char, int32_t *> mp;
-    mp['W'] = Parameter.FrontPWM;
-    mp['S'] = Parameter.BackPWM;
-    mp['A'] = Parameter.LeftPWM;
-    mp['D'] = Parameter.RightPWM;
-    mp['E'] = Parameter.ClockwisePWM;
-    mp['Q'] = Parameter.AnticlockwisePWM;
-    mp['X'] = Parameter.StopPWM;
-
 
     if (flag_PID)
     {
-        // 更新为前后左右的PWM
-        if (mp.count(RxBuffer[0]))
+        // 外圈四个电机更新为前后左右运动的PWM(在没有yaw角控制的情况下可开环运动)
+        if (msg_state_map.count(RxBuffer[0]))
         {   
-            for (int i = 0; i < 4; ++i)
-            {
-                data[Parameter.OutID[i]] = mp[RxBuffer[0]][i];
+            motion_state = msg_state_map[RxBuffer[0]];
+            if(flag_angle){
+                for (int i = 0; i < 4; ++i)
+                {
+                    data[Parameter.OutID[i]] = data[Parameter.OutID[i]] + state_PWM_map[motion_state][i] - Parameter.InitPWM;
+                }
+            }
+            else{
+                for (int i = 0; i < 4; ++i)
+                {
+                    data[Parameter.OutID[i]] = state_PWM_map[motion_state][i];
+                }
             }
         }
 
@@ -279,12 +291,12 @@ void Propeller_I2C::Receive()
         if (strncmp((char *)RxBuffer, "OFF", 3) == 0)
         {
             flag_PID = false;
+            flag_angle = false;
             for (int i = 0; i < 8; ++i)
             {
                 data[i] = Parameter.InitPWM;
             }
             Target_depth = 30;
-            flag_angle = false;
             data[Parameter.OutID[0]] = data[Parameter.OutID[1]] = data[Parameter.OutID[2]] = data[Parameter.OutID[3]] = Parameter.InitPWM;
         }
 
@@ -427,8 +439,6 @@ void Propeller_I2C::Handle()
     // HAL_Delay(5);
     if (flag_PID)
     {   
-        // if (!flag_roll) float_ctrl(); // PID控制悬浮状态
-        // else roll_ctrl(); 
         float_ctrl();
         // speed_ctrl();
     }
@@ -814,11 +824,15 @@ void Propeller_I2C::Yaw_ctrl()
             data[Parameter.OutID[3]] = Parameter.InitPWM - Sign_V33[Parameter.OutID[3]] * Component.Yaw_angle * factor;
             break;
         }
-        case V40:
-        data[Parameter.OutID[0]] = Parameter.InitPWM + Sign_V40[Parameter.OutID[0]] * Component.Yaw_angle * factor;
-        data[Parameter.OutID[1]] = Parameter.InitPWM + Sign_V40[Parameter.OutID[1]] * Component.Yaw_angle * factor;
-        data[Parameter.OutID[2]] = Parameter.InitPWM - Sign_V40[Parameter.OutID[2]] * Component.Yaw_angle * factor;
-        data[Parameter.OutID[3]] = Parameter.InitPWM - Sign_V40[Parameter.OutID[3]] * Component.Yaw_angle * factor;
+    case V40:
+        // data[Parameter.OutID[0]] = Parameter.InitPWM + Sign_V40[Parameter.OutID[0]] * Component.Yaw_angle * factor;
+        // data[Parameter.OutID[1]] = Parameter.InitPWM + Sign_V40[Parameter.OutID[1]] * Component.Yaw_angle * factor;
+        // data[Parameter.OutID[2]] = Parameter.InitPWM - Sign_V40[Parameter.OutID[2]] * Component.Yaw_angle * factor;
+        // data[Parameter.OutID[3]] = Parameter.InitPWM - Sign_V40[Parameter.OutID[3]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[0]] = state_PWM_map[motion_state][0] + Sign_V40[Parameter.OutID[0]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[1]] = state_PWM_map[motion_state][1] + Sign_V40[Parameter.OutID[1]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[2]] = state_PWM_map[motion_state][2] - Sign_V40[Parameter.OutID[2]] * Component.Yaw_angle * factor;
+        data[Parameter.OutID[3]] = state_PWM_map[motion_state][3] - Sign_V40[Parameter.OutID[3]] * Component.Yaw_angle * factor;
         break;
 
     default:
