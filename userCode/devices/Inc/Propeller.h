@@ -10,8 +10,32 @@
 #include "PID.h"
 #include <vector>
 #include <unordered_map>
+#include <functional>
 
 using namespace std;
+
+
+enum Motion_State{
+    FLOAT,
+    FRONT,
+    BACK,
+    LEFT,
+    RIGHT
+};
+
+// 自定义哈希函数
+struct MotionStateHash {
+    size_t operator()(const Motion_State& state) const {
+        return static_cast<size_t>(state);  // 枚举值本质是 int，直接转换为 size_t
+    }
+};
+
+// 自定义比较函数（可选，普通枚举默认支持 ==）
+struct MotionStateEqual {
+    bool operator()(const Motion_State& a, const Motion_State& b) const {
+        return a == b;  // 枚举值默认支持 == 比较
+    }
+};
 
 struct Propeller_Parameter_t{
 
@@ -73,6 +97,7 @@ private:
     bool flag_range;
     bool flag_roll;
     bool flag_PWM_output;
+    Motion_State motion_state;
     int roll_state;
     int roll_state_total;
     PID DepthPID, RollPID, PitchPID;
