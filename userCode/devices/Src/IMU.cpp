@@ -143,6 +143,18 @@ void IMU::Handle()
         }
     }
 
+    // TEST: 输出三轴角速度（角度值）
+    // if(is_output_angle){
+    //     if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE)
+    //     {float data[3];
+    //     data[0] = attitude.yaw_v * 1.0f;
+    //     float_to_str(data[0], 0);
+    //     data[1] = attitude.pitch_v * 1.0f;
+    //     float_to_str(data[1], 0);
+    //     data[2] = attitude.rol_v * 1.0f;
+    //     float_to_str(data[2], 1);}
+    // }
+
     // // 输出三轴加速度
     // if(is_output_accl){
     //     for (int i = 0; i < 3; i++){
