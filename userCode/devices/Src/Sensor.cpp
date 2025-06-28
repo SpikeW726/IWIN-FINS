@@ -476,83 +476,97 @@ void PressureSensor::Handle_single(int id)
 // 仿照Handle_single的思路，通过重叠I2C第一次请求后的等待时间实现整体效率提高
 void PressureSensor::Handle_all()
 {
-    uint8_t data = MS5837_30BA_ADC_RD;
-    uint8_t command_tmp = MS5837_30BA_D2_OSR1024;
-    uint8_t command_pres = MS5837_30BA_D1_OSR1024;
-    uint8_t temp[3];
-    float tmp_pres;
-    unsigned long conversion[8];    //conversion的前四位存储温度数据，后四位存储水压信息
-    // 收集温度信息
-    for (int i = 0; i < SENSOR_NUM; ++i)
-    {
-        TCA_SetChannel(i);
-        HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &command_tmp, 1, 0xffff);
-    }
-    HAL_Delay(3);
-    for (int i = 0; i < SENSOR_NUM; ++i)
-    {
-        TCA_SetChannel(i);
-        HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &data, 1, 0xffff);
-        HAL_I2C_Master_Receive(&hi2c2, B02_IIC_ADDRESS, temp, 3, 0xffff);
-        conversion[i] = (unsigned long)temp[0] * 65536 + (unsigned long)temp[1] * 256 + (unsigned long)temp[2];
-    }
+    static uint8_t data = MS5837_30BA_ADC_RD;
+    static uint8_t command_tmp = MS5837_30BA_D2_OSR1024;
+    static uint8_t command_pres = MS5837_30BA_D1_OSR1024;
+    static uint8_t temp[3];
+    static float tmp_pres;
+    static unsigned long conversion[8];    //conversion的前四位存储温度数据，后四位存储水压信息
 
-    // 收集压强信息
-    for (int i = 0; i < SENSOR_NUM; ++i)
-    {
-        TCA_SetChannel(i);
-        HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &command_pres, 1, 0xffff);
-    }
-    HAL_Delay(3);
-    for (int i = 0; i < SENSOR_NUM; ++i)
-    {
-        TCA_SetChannel(i);
-        HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &data, 1, 0xffff);
-        HAL_I2C_Master_Receive(&hi2c2, B02_IIC_ADDRESS, temp, 3, 0xffff);
-        conversion[i+4] = (unsigned long)temp[0] * 65536 + (unsigned long)temp[1] * 256 + (unsigned long)temp[2];
-    }
-
-    // 参考float PressureSensor::MS5837_30BA_GetData(int id)计算四个原始压强
-    float pressure[4];
-    for (int i = 0; i < SENSOR_NUM; ++i)
-    {
-        if (flag_ok[i])
-        {
-            D2_Temp = conversion[i];
-            D1_Pres = conversion[i+4];
-            dT = D2_Temp - (((uint32_t)Cal_C[i][5]) * 256l);
-            SENS = (int64_t)Cal_C[i][1] * 65536l + ((int64_t)Cal_C[i][3] * dT) / 128l;
-            OFF_ = (int64_t)Cal_C[i][2] * 131072l + ((int64_t)Cal_C[i][4] * dT) / 64l;
-
-            TEMP = 2000l + (int64_t)(dT)*Cal_C[i][6] / 8388608LL;
-            if (TEMP < 2000) // low temp
+    switch (state) {
+        case PS_HANDLE_STATE::GET_TEMPERATURE:
+            // 收集温度信息
+            for (int i = 0; i < SENSOR_NUM; ++i)
             {
+                TCA_SetChannel(i);
+                HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &command_tmp, 1, 1);
+            }
+            state = PS_HANDLE_STATE::GET_PRESSURE;
+            break;
 
-                Ti = (11 * (int64_t)(dT) * (int64_t)(dT) / (34359738368LL));
-                OFFi = (31 * (TEMP - 2000) * (TEMP - 2000)) / 8;
-                SENSi = (63 * (TEMP - 2000) * (TEMP - 2000)) / 32;
+        case PS_HANDLE_STATE::GET_PRESSURE:
+            // 获取温度数值
+            for (int i = 0; i < SENSOR_NUM; ++i)
+            {
+                TCA_SetChannel(i);
+                HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &data, 1, 1);
+                HAL_I2C_Master_Receive(&hi2c2, B02_IIC_ADDRESS, temp, 3, 1);
+                conversion[i] = (unsigned long)temp[0] * 65536 + (unsigned long)temp[1] * 256 + (unsigned long)temp[2];
             }
-            else
-            { // high temp
-                Ti = 2 * (dT * dT) / (137438953472LL);
-                OFFi = (1 * (TEMP - 2000) * (TEMP - 2000)) / 16;
-                SENSi = 0;
+
+            // 收集压强信息
+            for (int i = 0; i < SENSOR_NUM; ++i)
+            {
+                TCA_SetChannel(i);
+                HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &command_pres, 1, 1);
             }
-            OFF2 = OFF_ - OFFi;
-            SENS2 = SENS - SENSi;
-            pressure[i] = ((D1_Pres * SENS2) / 2097152.0 - OFF2) / 32768.0 / 100.0;
+            state = PS_HANDLE_STATE::CALCULATE;
+            break;
+
+        case PS_HANDLE_STATE::CALCULATE:
+            // 获取压强数值
+            for (int i = 0; i < SENSOR_NUM; ++i)
+            {
+                TCA_SetChannel(i);
+                HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &data, 1, 1);
+                HAL_I2C_Master_Receive(&hi2c2, B02_IIC_ADDRESS, temp, 3, 1);
+                conversion[i+4] = (unsigned long)temp[0] * 65536 + (unsigned long)temp[1] * 256 + (unsigned long)temp[2];
+            }
+
+            // 参考float PressureSensor::MS5837_30BA_GetData(int id)计算四个原始压强
+            float pressure[4];
+            for (int i = 0; i < SENSOR_NUM; ++i)
+            {
+                if (flag_ok[i])
+                {
+                    D2_Temp = conversion[i];
+                    D1_Pres = conversion[i+4];
+                    dT = D2_Temp - (((uint32_t)Cal_C[i][5]) * 256l);
+                    SENS = (int64_t)Cal_C[i][1] * 65536l + ((int64_t)Cal_C[i][3] * dT) / 128l;
+                    OFF_ = (int64_t)Cal_C[i][2] * 131072l + ((int64_t)Cal_C[i][4] * dT) / 64l;
+
+                    TEMP = 2000l + (int64_t)(dT)*Cal_C[i][6] / 8388608LL;
+                    if (TEMP < 2000) // low temp
+                    {
+
+                        Ti = (11 * (int64_t)(dT) * (int64_t)(dT) / (34359738368LL));
+                        OFFi = (31 * (TEMP - 2000) * (TEMP - 2000)) / 8;
+                        SENSi = (63 * (TEMP - 2000) * (TEMP - 2000)) / 32;
+                    }
+                    else
+                    { // high temp
+                        Ti = 2 * (dT * dT) / (137438953472LL);
+                        OFFi = (1 * (TEMP - 2000) * (TEMP - 2000)) / 16;
+                        SENSi = 0;
+                    }
+                    OFF2 = OFF_ - OFFi;
+                    SENS2 = SENS - SENSi;
+                    pressure[i] = ((D1_Pres * SENS2) / 2097152.0 - OFF2) / 32768.0 / 100.0;
+                }
+                // else
+                //     return -1;
+            }
+
+        // 把原始压强赋值给data_pressure_raw，计算后给data_pressure赋值
+        for (int i = 0; i < SENSOR_NUM; ++i)
+        {
+            data_pressure_raw[i] = pressure[i];
+            tmp_pres = data_pressure_raw[i] - data_pressure_offset[i];
+            tmp_pres = Pressure_Kf[i].update(tmp_pres); // 卡尔曼滤波
+            data_pressure[i] = tmp_pres;
         }
-        // else
-        //     return -1;
-    }
-
-    // 把原始压强赋值给data_pressure_raw，计算后给data_pressure赋值
-    for (int i = 0; i < SENSOR_NUM; ++i)
-    {
-        data_pressure_raw[i] = pressure[i];
-        tmp_pres = data_pressure_raw[i] - data_pressure_offset[i];
-        tmp_pres = Pressure_Kf[i].update(tmp_pres); // 卡尔曼滤波
-        data_pressure[i] = tmp_pres;
+        state = PS_HANDLE_STATE::GET_TEMPERATURE;
+        break;
     }
 }
 

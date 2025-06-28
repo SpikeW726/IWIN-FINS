@@ -61,8 +61,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 
     if(init_Flag == 0) return;
-    if(htim == &htim1){ //60Hz
-        time_start = HAL_GetTick();
+    if(htim == &htim1){ //300Hz
+        // time_start = HAL_GetTick();
         for(int i = 0 ; i < DEVICE_NUM ; ++i){
                 device[i]->Handle();
         }

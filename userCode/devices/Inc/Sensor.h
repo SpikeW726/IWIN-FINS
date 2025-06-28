@@ -60,6 +60,13 @@ typedef struct Sensor_Site{
     float z[SENSOR_NUM];
 } Sensor_Site_t;
 
+enum class PS_HANDLE_STATE {
+        GET_TEMPERATURE = 0X00,
+        GET_PRESSURE = 0X01,
+        CALCULATE = 0X02
+    };
+extern PS_HANDLE_STATE state = PS_HANDLE_STATE::GET_TEMPERATURE;
+
 class PressureSensor: public  Device{
 
     unsigned char MS5837_30BA_Crc4(int id);
