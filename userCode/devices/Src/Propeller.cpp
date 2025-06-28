@@ -159,19 +159,19 @@ int32_t PWM_V40[8][4] = { // 调试出来的各种状态PWM,第一行是悬浮
 };
 
 PID_Regulator_t DepthPID_V40(20, 0.015, 33, 100, 50, 50, 200);
+
 PID_Regulator_t PitchPID_V40(20, 0.1, 33, 50, 25, 25, 100);
 PID_Regulator_t RollPID_V40(5, 0.03, 33, 50, 25, 25, 100);
-
 PID_Regulator_t YawPID_V40(12, 0.06, 300, 10, 100, 50, 300);
 
 PID_Regulator_t YawInPID_V40(12, 0.01, 100, 10, 100, 50, 300);
 PID_Regulator_t YawOutPId_V40(1, 0.01, 1, 10, 100, 50, 300);
 
-PID_Regulator_t RollInPID_V40(5, 0.1, 33, 50, 25, 25, 100);
-PID_Regulator_t RollOutPID_V40(2, 0.05, 5, 50, 25, 25, 100);
+PID_Regulator_t RollInPID_V40(0.05, 0.0003, 0.33, 5, 2.5, 2.5, 10);
+PID_Regulator_t RollOutPID_V40(1, 0, 0, 50, 25, 25, 100);
 
-PID_Regulator_t PitchInPID_V40(10, 0.2, 33, 50, 25, 25, 100);
-PID_Regulator_t PitchOutPID_V40(2, 0.1, 1, 50, 25, 25, 100);
+PID_Regulator_t PitchInPID_V40(0.2, 0.001, 0.33, 5, 2.5, 2.5, 10);
+PID_Regulator_t PitchOutPID_V40(1, 0, 0, 50, 25, 25, 100);
 
 Propeller_Parameter_t Parameter_V40(InID_V40, OutID_V40, InitPWM_V40, PWM_V40, DepthPID_V40, PitchPID_V40, RollPID_V40, YawPID_V40,
                     YawInPID_V40, YawOutPId_V40, RollInPID_V40, RollOutPID_V40, PitchInPID_V40, PitchOutPID_V40);
@@ -517,7 +517,7 @@ void Propeller_I2C::float_ctrl()
         if(roll_diff > pi) roll_diff = -(2*pi - roll_diff);
         if(roll_diff < -pi) roll_diff = (2*pi + roll_diff);
 
-        float targetRollRate = RollInPID.PIDCalc(0.0, roll_diff);
+        float targetRollRate = RollOutPID.PIDCalc(0.0, roll_diff);
 
         if (useFilter){
             new_roll_vel_diff = IMU::imu.attitude.rol_v - targetRollRate;
@@ -526,8 +526,9 @@ void Propeller_I2C::float_ctrl()
         }
         else roll_vel_diff = IMU::imu.attitude.rol_v - targetRollRate;
 
-        Component.Roll = RollOutPID.PIDCalc(targetRollRate, roll_vel_diff);
+        Component.Roll = RollInPID.PIDCalc(targetRollRate, roll_vel_diff);
 
+        // 单环PID控制
         // Component.Roll = RollPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_roll);
 
         // pid for pitch
@@ -547,7 +548,7 @@ void Propeller_I2C::float_ctrl()
         if(pitch_diff > pi) pitch_diff = -(2*pi - pitch_diff);
         if(pitch_diff < -pi) pitch_diff = (2*pi + pitch_diff);
 
-        float targetPitchRate = PitchInPID.PIDCalc(0.0, pitch_diff);
+        float targetPitchRate = PitchOutPID.PIDCalc(0.0, pitch_diff);
 
         if (useFilter){
             new_pitch_vel_diff = IMU::imu.attitude.pitch_v - targetPitchRate;
@@ -556,9 +557,21 @@ void Propeller_I2C::float_ctrl()
         }
         else pitch_vel_diff = IMU::imu.attitude.pitch_v - targetPitchRate;
 
-        Component.Pitch = PitchOutPID.PIDCalc(targetPitchRate, pitch_vel_diff);
+        Component.Pitch = PitchInPID.PIDCalc(targetPitchRate, pitch_vel_diff);
 
+        // 单环PID控制
         // Component.Pitch = PitchPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_pitch);
+
+        // TEST: 输出imu三轴角速度
+        // if(1){
+        // float data[3];
+        // for (int i = 0; i < 3; i++){
+        //     data[i] = angle_value[i] * 180 / 3.14f;
+        //     if (i==2) float_to_str(data[i], 1);
+        //     else float_to_str(data[i], 0);
+        // }
+        // data[0]
+    
     }
     else{
         Component.Depth = 0;
@@ -786,7 +799,7 @@ void Propeller_I2C::Yaw_ctrl()
     if(angle_diff > pi) angle_diff = -(2*pi - angle_diff);
     if(angle_diff < -pi) angle_diff = (2*pi + angle_diff);
 
-    float targetYawRate = YawInPID.PIDCalc(0.0, angle_diff);
+    float targetYawRate = YawOutPID.PIDCalc(0.0, angle_diff);
 
     // float current_yaw = IMU::imu.attitude.yaw_v;
 
@@ -797,7 +810,7 @@ void Propeller_I2C::Yaw_ctrl()
     }
     else angle_vel_diff = IMU::imu.attitude.yaw_v - targetYawRate;
 
-    Component.Yaw_angle = YawOutPID.PIDCalc(targetYawRate, angle_vel_diff);
+    Component.Yaw_angle = YawInPID.PIDCalc(targetYawRate, angle_vel_diff);
 
     // post-process
     switch (Robot_Version) 
