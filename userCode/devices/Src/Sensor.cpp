@@ -483,7 +483,7 @@ void PressureSensor::Handle_all()
     static float tmp_pres;
     static unsigned long conversion[8];    //conversion的前四位存储温度数据，后四位存储水压信息
 
-    switch (state) {
+    switch (ps_state) {
         case PS_HANDLE_STATE::GET_TEMPERATURE:
             // 收集温度信息
             for (int i = 0; i < SENSOR_NUM; ++i)
@@ -491,7 +491,7 @@ void PressureSensor::Handle_all()
                 TCA_SetChannel(i);
                 HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &command_tmp, 1, 1);
             }
-            state = PS_HANDLE_STATE::GET_PRESSURE;
+            ps_state = PS_HANDLE_STATE::GET_PRESSURE;
             break;
 
         case PS_HANDLE_STATE::GET_PRESSURE:
@@ -510,7 +510,7 @@ void PressureSensor::Handle_all()
                 TCA_SetChannel(i);
                 HAL_I2C_Master_Transmit(&hi2c2, B02_IIC_ADDRESS, &command_pres, 1, 1);
             }
-            state = PS_HANDLE_STATE::CALCULATE;
+            ps_state = PS_HANDLE_STATE::CALCULATE;
             break;
 
         case PS_HANDLE_STATE::CALCULATE:
@@ -565,7 +565,7 @@ void PressureSensor::Handle_all()
             tmp_pres = Pressure_Kf[i].update(tmp_pres); // 卡尔曼滤波
             data_pressure[i] = tmp_pres;
         }
-        state = PS_HANDLE_STATE::GET_TEMPERATURE;
+        ps_state = PS_HANDLE_STATE::GET_TEMPERATURE;
         break;
     }
 }

@@ -65,7 +65,6 @@ enum class PS_HANDLE_STATE {
         GET_PRESSURE = 0X01,
         CALCULATE = 0X02
     };
-extern PS_HANDLE_STATE state = PS_HANDLE_STATE::GET_TEMPERATURE;
 
 class PressureSensor: public  Device{
 
@@ -127,6 +126,7 @@ public:
 
     //uint8_t flag_Busy;
     static PressureSensor pressure_sensor;
+    PS_HANDLE_STATE ps_state = PS_HANDLE_STATE::GET_TEMPERATURE;
 
 };
 
