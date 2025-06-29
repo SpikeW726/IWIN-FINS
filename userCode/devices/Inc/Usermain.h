@@ -106,7 +106,9 @@ public:
 
 };
 
+void send_float(float value, uint8_t decimalPlaces, bool endSign);
 
+void send_int(int value, bool endSign);
 
 /*结构体成员取值定义组------------------------------------------------------*/
 /*外部变量声明-------------------------------------------------------------*/

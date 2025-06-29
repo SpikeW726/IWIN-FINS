@@ -15,6 +15,7 @@
 #include "LED.h"
 #include "Buzzer.h"
 #include "gpio.h"
+#include "UART_Base.h"
 
 // 定义设备数量宏
 //------TODO:修改设备数量
@@ -67,22 +68,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 device[i]->Handle();
         }
     //     // 测量程序处理时间并输出
-    //     time_end = HAL_GetTick();
-    //     time_interval = time_end - time_start;
-        
-    //     int data_digit[4];
-    //     for (int j = 0; j < 4; ++j)
-    //     {
-    //         data_digit[j] = time_interval % 10;
-    //         time_interval /= 10;
-    //     }
-    //     txt[0] = '0' + data_digit[3];
-    //     txt[1] = '0' + data_digit[2];
-    //     txt[2] = '0' + data_digit[1];
-    //     txt[3] = '0' + data_digit[0];
-    //     txt[4] = '\n';
-    //     HAL_UART_Transmit(&huart6, txt, sizeof(txt), 0x00ff);
-    // }
+        // time_end = HAL_GetTick();
+        // time_interval = time_end - time_start;
+        // send_int(time_interval, 1);
     // if(htim == &htim10){
     //     device[DEVICE_NUM-1]->Handle();;
     //     //aRGB_led_change(period);
@@ -105,7 +93,18 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t datasize)//H
         }
         HAL_UARTEx_ReceiveToIdle_IT(&huart6, RxBuffer, SERIAL_LENGTH_MAX);
     }
+}
 
+// 串口发送中断回调函数
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+    if(huart == &huart1) {
+        UARTBaseLite<1>::GetInstance().isTxFinished = true;
+        UARTBaseLite<1>::GetInstance().TxLoader();
+    }
+    else if(huart == &huart6){
+        UARTBaseLite<6>::GetInstance().isTxFinished = true;
+        UARTBaseLite<6>::GetInstance().TxLoader();
+    }
 }
 
 // 按键中断，暂时无用
@@ -124,6 +123,77 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
         }*/
     }
     IMU::imu.ITHandle(GPIO_Pin);
+}
+
+void send_float(float value, uint8_t decimalPlaces, bool endSign){
+    bool isNegative = 0;
+    uint8_t len = 0;
+    char buffer[20] = {0};
+
+    // 处理负数
+    if(value < 0){
+        isNegative = 1;
+        value = -value;
+    }
+    if(isNegative) {
+        buffer[0] = '-';
+        len = 1;
+    }
+
+    // 转换整数部分
+    int32_t intPart = (int)value;
+    len += sprintf(buffer+len, "%d", intPart);
+
+    // 处理小数部分
+    if (decimalPlaces > 0) {
+        buffer[len++] = '.';
+
+        float fraction = value - (float)intPart;
+        for (uint8_t i = 0; i < decimalPlaces; i++) {
+            fraction *= 10;
+            int digit = (int)fraction;
+            buffer[len++] = digit + '0';
+            fraction -= digit;
+        }
+    }
+
+    // 若结束则换行，否则是逗号
+    if(endSign)
+        buffer[len++] = '\n'; // 字符串结束符
+    else
+        buffer[len++] = ',';
+
+    buffer[len] = '\0';
+
+    // HAL_UART_Transmit(&huart6, (uint8_t *)buffer, len, 0x00ff);
+    UARTBaseLite<6>::GetInstance().Transmit((uint8_t *)buffer,len);
+}
+
+void send_int(int32_t value, bool endSign){
+    char buffer[20] = {0};
+    uint8_t len = 0;
+    bool isNegative = 0;
+
+    // 处理负数
+    if(value < 0){
+        isNegative = 1;
+        value = -value;
+    }
+    if(isNegative) {
+        buffer[0] = '-';
+        len = 1;
+    }
+
+    len += sprintf(buffer+len, "%d", value);
+
+    if(endSign)
+        buffer[len] = '\n';
+    else
+        buffer[len] = ',';
+
+    buffer[len] = '\0';
+    // HAL_UART_Transmit(&huart6, (uint8_t *)buffer, len, 0x00ff);
+    UARTBaseLite<6>::GetInstance().Transmit((uint8_t *)buffer,len);
 }
 
 // void DMA2_Stream0_IRQHandler(void){
