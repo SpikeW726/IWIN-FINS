@@ -3,7 +3,6 @@
 //
 
 #include "IMU.h"
-#include "Sensor.h"
 #include "ist8310driver.h"
 
 IMU IMU::imu;
@@ -137,7 +136,7 @@ void IMU::Handle()
     attitude.yaw_v = gyro[2];
     attitude.neg_rol_v = -gyro[0];
     attitude.neg_pitch_v = -gyro[1];
-    attitude.neg_pitch_v = -gyro[2];
+    attitude.neg_yaw_v = -gyro[2];
     float angle_value[3] = {attitude.yaw, attitude.pitch, attitude.rol};
     float angle_v_value[3] = {attitude.rol_v, attitude.pitch_v, attitude.yaw_v};
 
@@ -153,7 +152,7 @@ void IMU::Handle()
 
     // TEST: 输出三轴角速度（角度值)，输出顺序：rol, pitch, yaw
     // if(is_output_angle){
-    //     if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE)
+    //     // if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE)
     //     {
     //         float data[3];
     //         data[0] = gyro[0] * 180 / 3.14f; //ROLL
