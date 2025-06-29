@@ -4,7 +4,6 @@
 extern I2C_HandleTypeDef hi2c2;
 
 PressureSensor PressureSensor::pressure_sensor;
-PS_HANDLE_STATE ps_state = PS_HANDLE_STATE::GET_TEMPERATURE;
 
 KalmanFilter Pressure_Kf[4] = {KalmanFilter(0.01, 0.05, 1.0, 0.0),
                                KalmanFilter(0.01, 0.05, 1.0, 0.0),

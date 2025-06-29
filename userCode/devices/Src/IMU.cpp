@@ -131,7 +131,14 @@ void IMU::Handle()
     attitude.yaw = INS_angle[0];
     attitude.pitch = INS_angle[1];
     attitude.rol = INS_angle[2];
+    attitude.rol_v = gyro[0];
+    attitude.pitch_v = gyro[1];
+    attitude.yaw_v = gyro[2];
+    attitude.neg_rol_v = -gyro[0];
+    attitude.neg_pitch_v = -gyro[1];
+    attitude.neg_yaw_v = -gyro[2];
     float angle_value[3] = {attitude.yaw, attitude.pitch, attitude.rol};
+    float angle_v_value[3] = {attitude.rol_v, attitude.pitch_v, attitude.yaw_v};
 
     // 输出三轴欧拉角（角度值）
     if(is_output_angle){
@@ -142,6 +149,20 @@ void IMU::Handle()
             else float_to_str(data[i], 0);
         }
     }
+
+    // TEST: 输出三轴角速度（角度值)，输出顺序：rol, pitch, yaw
+    // if(is_output_angle){
+    //     // if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE)
+    //     {
+    //         float data[3];
+    //         data[0] = gyro[0] * 180 / 3.14f; //ROLL
+    //         float_to_str(data[0], 0);
+    //         data[1] = gyro[1] * 180 / 3.14f; // PITCH
+    //         float_to_str(data[1], 0);
+    //         data[2] = gyro[2] * 180 / 3.14f; // YAW
+    //         float_to_str(data[2], 1);
+    //     }
+    // }
 
     // // 输出三轴加速度
     // if(is_output_accl){
