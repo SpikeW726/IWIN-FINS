@@ -54,23 +54,40 @@ uint32_t init_Flag = 0;
 uint8_t RxBuffer[SERIAL_LENGTH_MAX]={0};
 bool flag_cnt = false;
 extern volatile int32_t time_start, time_end, time_interval, cnt;
-volatile int32_t time_start, time_end, time_interval, cnt = 0;
+volatile int32_t time_start=0, time_end, time_interval, cnt = 0;
 uint8_t txt[5] = {0};
 
 // 定时器中断服务函数, 用于周期性处理设备
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+    
 
     if(init_Flag == 0) return;
-    if(htim == &htim1){ //300Hz
+    if(htim == &htim1){ //150Hz
         // time_start = HAL_GetTick();
+        // static int a = 0;
+        // a++;
+        // if (a==300)
+        // {
+        //     time_end = HAL_GetTick();
+        //     time_interval = time_end - time_start;
+        //     send_int(time_interval, 0);
+        //     a = 0;
+        //     time_start = HAL_GetTick();
+        // }
         for(int i = 0 ; i < DEVICE_NUM ; ++i){
-                device[i]->Handle();
+            device[i]->Handle();
         }
-    //     // 测量程序处理时间并输出
-        // time_end = HAL_GetTick();
-        // time_interval = time_end - time_start;
-        // send_int(time_interval, 1);
+        // 测量程序处理时间并输出
+        // if (a==300)
+        // {
+        //     HAL_UART_Transmit(&huart6, (uint8_t*)"1", 1, 0x00ff);
+        //     // time_end = HAL_GetTick();
+        //     // time_interval = time_end - time_start;
+        //     // send_int(time_interval, 1);
+        //     a = 0;
+        //     // time_start = HAL_GetTick();
+        // }
     // if(htim == &htim10){
     //     device[DEVICE_NUM-1]->Handle();;
     //     //aRGB_led_change(period);

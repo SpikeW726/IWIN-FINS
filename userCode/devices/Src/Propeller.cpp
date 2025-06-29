@@ -495,13 +495,6 @@ void Propeller_I2C::float_ctrl()
 {
     if (!flag_roll)
     {
-        static int a = 0;
-        a++;
-        if (a==300)
-        {
-            HAL_UART_Transmit(&huart6, (uint8_t*)"1", 1, 0x00ff);
-            a = 0;
-        }
         // To DO: 调整内外环pid变成3:1的频率比
         Component.Depth = DepthPID.PIDCalc(Target_depth, PressureSensor::pressure_sensor.data_depth);
 
