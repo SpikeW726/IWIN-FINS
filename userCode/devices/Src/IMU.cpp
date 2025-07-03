@@ -164,6 +164,18 @@ void IMU::Handle()
     //     }
     // }
 
+    // TEST: 输出pitch角的目标角速度，当前角速度和误差
+    // if (is_output_angle)
+    // {
+    //     float data[3];
+    //     data[0] = targetpitchrat * 180 / 3.14f;
+    //     data[1] = gyro[1] * 180 / 3.14f;
+    //     data[2] = gyro[1] * 180 / 3.14f - targetpitchrate * 180 / 3.14f;
+    //     float_to_str(data[0], 0);
+    //     float_to_str(data[1], 0);
+    //     float_to_str(data[2], 1);
+    // }
+
     // // 输出三轴加速度
     // if(is_output_accl){
     //     for (int i = 0; i < 3; i++){
