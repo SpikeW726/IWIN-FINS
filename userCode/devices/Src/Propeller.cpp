@@ -148,7 +148,7 @@ int32_t InitPWM_V40 = 1600; // 推进器初始化的PWM
 int32_t Deadband_V40 = 120;
 
 int32_t PWM_V40[8][4] = { // 调试出来的各种状态PWM,第一行是悬浮
-    {InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[1]] * 100, InitPWM_V40, InitPWM_V40 - Sign_V40[InID_V40[3]] * 90},                                                                                                                             // Base
+    {InitPWM_V40, InitPWM_V40, InitPWM_V40, InitPWM_V40},                                                                                                                             // Base
     {InitPWM_V40 - Sign_V40[OutID_V40[0]] * 100, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 100, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 100, InitPWM_V40 - Sign_V40[OutID_V40[3]] * 100}, // Front
     {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 100, InitPWM_V40 + Sign_V40[OutID_V40[1]] * 100, InitPWM_V40 + Sign_V40[OutID_V40[2]] * 100, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 100}, // Back
     {InitPWM_V40 + Sign_V40[OutID_V40[0]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[1]] * 90, InitPWM_V40 - Sign_V40[OutID_V40[2]] * 90, InitPWM_V40 + Sign_V40[OutID_V40[3]] * 90}, // Left
@@ -167,14 +167,16 @@ PID_Regulator_t YawPID_V40(12, 0.06, 300, 10, 100, 50, 300);
 PID_Regulator_t YawInPID_V40(10, 0, 20, 10, 100, 50, 300);
 PID_Regulator_t YawOutPId_V40(1, 0, 0, 1, 10, 5, 30);
 
-PID_Regulator_t RollInPID_V40(0.5, /*0.005*/0, /*0.1*/20, 50, 25, 25, 100);
-PID_Regulator_t RollOutPID_V40(5, /*0.01*/0.5, /*33*/ 0, 5, 2.5, 2.5, 10);
+PID_Regulator_t RollInPID_V40(2, 0, 0, 200, 100, 100, 300);
+PID_Regulator_t RollOutPID_V40(0.5, 0, 10, 5, 2.5, 2.5, 10);
+// PID_Regulator_t RollInPID_V40(0.5, /*0.005*/0, /*0.1*/20, 50, 25, 25, 300);
+// PID_Regulator_t RollOutPID_V40(5, /*0.01*/0.5, /*33*/ 0, 5, 2.5, 2.5, 30);
 
 // PID_Regulator_t RollInPID_V40(0.05, 0.0003, 10, 5, 2.5, 2.5, 10);
 // PID_Regulator_t RollOutPID_V40(0.5, 0, 20, 50, 25, 25, 100);
 
-PID_Regulator_t PitchInPID_V40(5, 0.01, 0, 50, 25, 25, 100);
-PID_Regulator_t PitchOutPID_V40(1, 0.1, 0.33, 5, 2.5, 2.5, 10);
+PID_Regulator_t PitchInPID_V40(5, 0, 0, 50, 25, 25, 100);
+PID_Regulator_t PitchOutPID_V40(1, 0, 5, 5, 2.5, 2.5, 10);
 
 Propeller_Parameter_t Parameter_V40(InID_V40, OutID_V40, InitPWM_V40, PWM_V40, DepthPID_V40, PitchPID_V40, RollPID_V40, YawPID_V40,
                                     YawInPID_V40, YawOutPId_V40, RollInPID_V40, RollOutPID_V40, PitchInPID_V40, PitchOutPID_V40);
@@ -517,11 +519,13 @@ void Propeller_I2C::float_ctrl()
             if (useFilter)
             {
                 new_roll_diff = PressureSensor::pressure_sensor.data_roll;
+                // new_roll_diff = IMU::imu.attitude.rol;
                 roll_diff = new_roll_diff * (1 - filter_rate) + last_roll_diff * filter_rate;
                 last_roll_diff = new_roll_diff;
             }
             else
                 roll_diff = PressureSensor::pressure_sensor.data_roll;
+                // roll_diff = IMU::imu.attitude.rol;
 
             if (roll_diff > pi)
                 roll_diff = -(2 * pi - roll_diff);
@@ -542,11 +546,21 @@ void Propeller_I2C::float_ctrl()
         else
             roll_vel_diff = IMU::imu.attitude.rol_v - targetRollRate;
 
-        Component.Roll = RollInPID.PIDCalc(0.0, roll_vel_diff);
+
+        if (PressureSensor::pressure_sensor.roll > -10 && PressureSensor::pressure_sensor.roll < 2.5)
+            Component.Roll = 0.0;
+        else
+            Component.Roll = RollInPID.PIDCalc(0.0, roll_vel_diff);
 
         // 测试：输出roll_diff
         if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE)
-            send_float(roll_diff, 2, 0);
+            // send_float(roll_diff, 2, 0);
+            {
+                // send_float(PressureSensor::pressure_sensor.data_roll, 2, 0);
+                // send_float(IMU::imu.attitude.rol * 180.0 / 3.14, 2, 0);
+                send_int(data[Parameter.InID[1]], 0);
+            }
+
 
         // 单环PID控制
         // Component.Roll = RollPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_roll);
@@ -659,10 +673,30 @@ void Propeller_I2C::float_ctrl()
         data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V33[Parameter.InID[3]] * (-Component.Depth + Component.Roll + Component.Pitch);
         break;
     case V40:
-        data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V40[Parameter.InID[0]] * (-Component.Depth - Component.Roll - Component.Pitch);
-        data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V40[Parameter.InID[1]] * (-Component.Depth - Component.Roll + Component.Pitch);
-        data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V40[Parameter.InID[2]] * (-Component.Depth + Component.Roll - Component.Pitch);
-        data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V40[Parameter.InID[3]] * (-Component.Depth + Component.Roll + Component.Pitch);
+        // data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V40[Parameter.InID[0]] * (-Component.Depth - Component.Roll - Component.Pitch);
+        // data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V40[Parameter.InID[1]] * (-Component.Depth - Component.Roll + Component.Pitch);
+        // data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V40[Parameter.InID[2]] * (-Component.Depth + Component.Roll - Component.Pitch);
+        // data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V40[Parameter.InID[3]] * (-Component.Depth + Component.Roll + Component.Pitch);
+        // data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V40[Parameter.InID[0]] * (-Component.Depth - Component.Roll - Component.Pitch - Deadband_V40/2);
+        // data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V40[Parameter.InID[1]] * (-Component.Depth - Component.Roll + Component.Pitch - Deadband_V40/2);
+        // data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V40[Parameter.InID[2]] * (-Component.Depth + Component.Roll - Component.Pitch - Deadband_V40/2);
+        // data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V40[Parameter.InID[3]] * (-Component.Depth + Component.Roll + Component.Pitch - Deadband_V40/2);
+        if (-Component.Depth - Component.Roll - Component.Pitch > 0)
+            data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V40[Parameter.InID[0]] * (-Component.Depth - Component.Roll - Component.Pitch + 50);
+        else
+            data[Parameter.InID[0]] = Parameter.BasePWM[0] - Sign_V40[Parameter.InID[0]] * (-Component.Depth - Component.Roll - Component.Pitch - 50);
+        if (-Component.Depth - Component.Roll + Component.Pitch > 0)
+            data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V40[Parameter.InID[1]] * (-Component.Depth - Component.Roll + Component.Pitch + 50);
+        else
+            data[Parameter.InID[1]] = Parameter.BasePWM[1] - Sign_V40[Parameter.InID[1]] * (-Component.Depth - Component.Roll + Component.Pitch - 50);
+        if (-Component.Depth + Component.Roll - Component.Pitch > 0)
+            data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V40[Parameter.InID[2]] * (-Component.Depth + Component.Roll - Component.Pitch + 50);
+        else
+            data[Parameter.InID[2]] = Parameter.BasePWM[2] - Sign_V40[Parameter.InID[2]] * (-Component.Depth + Component.Roll - Component.Pitch - 50);
+        if (-Component.Depth + Component.Roll + Component.Pitch > 0)
+            data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V40[Parameter.InID[3]] * (-Component.Depth + Component.Roll + Component.Pitch + 50);
+        else
+            data[Parameter.InID[3]] = Parameter.BasePWM[3] - Sign_V40[Parameter.InID[3]] * (-Component.Depth + Component.Roll + Component.Pitch - 50);
         break;
     }
 }

@@ -204,9 +204,9 @@ void send_int(int32_t value, bool endSign){
     len += sprintf(buffer+len, "%d", value);
 
     if(endSign)
-        buffer[len] = '\n';
+        buffer[len++] = '\n';
     else
-        buffer[len] = ',';
+        buffer[len++] = ',';
 
     buffer[len] = '\0';
     // HAL_UART_Transmit(&huart6, (uint8_t *)buffer, len, 0x00ff);
