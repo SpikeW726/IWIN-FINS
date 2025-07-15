@@ -634,7 +634,7 @@ void Propeller_I2C::float_ctrl()
         if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE)
         {
             // send_float(IMU::imu.attitude.rol * 180 / 3.14f, 2, 0);
-            send_float(IMU::imu.attitude.pitch * 180 / 3.14f, 4, 0);
+            // send_float(IMU::imu.attitude.pitch * 180 / 3.14f, 4, 0);
             // send_int(data[Parameter.InID[3]], 0);
             // send_float(IMU::imu.attitude.rol, 2, 0);
             // send_float(roll_diff, 2, 0);
@@ -647,17 +647,31 @@ void Propeller_I2C::float_ctrl()
         // Component.Roll = 150;
         // Component.Pitch = PitchPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_pitch);
         Component.Pitch = 0;
+        static int flag_first = 0;
 
         switch (roll_state)
         {
         case 0:
-            if (IMU::imu.attitude.rol > deg2rad(-25) && IMU::imu.attitude.rol < deg2rad(-20))
-            // if (IMU::imu.attitude.rol < deg2rad(25) && IMU::imu.attitude.rol > deg2rad(20))
+            // if (IMU::imu.attitude.rol > deg2rad(-25) && IMU::imu.attitude.rol < deg2rad(-20))
+            if (flag_first == 0 && IMU::imu.attitude.rol < deg2rad(-160) && IMU::imu.attitude.rol > deg2rad(-170))
+            {
+                flag_first = 1;
+            }
+            if (flag_first == 1 && IMU::imu.attitude.rol < deg2rad(-20) && IMU::imu.attitude.rol > deg2rad(-25))
+            {
+                flag_first = 2;
+            }
+            if (flag_first == 2 && IMU::imu.attitude.rol < deg2rad(-160) && IMU::imu.attitude.rol > deg2rad(-170))
+            {
+                flag_first = 3;
+            }
+            if (flag_first == 3 && IMU::imu.attitude.rol < deg2rad(-20) && IMU::imu.attitude.rol > deg2rad(-25))
             {
                 uint8_t TxBuffer[5] = {'0', '0', '0', '0', '0'};
                 // HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0xffff);
                 roll_state = (roll_state + 1) % roll_state_total;
                 flag_roll = 0;
+                flag_first = 0;
             }
             break;
             // case 1:
