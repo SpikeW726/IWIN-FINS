@@ -168,15 +168,8 @@ PID_Regulator_t YawPID_V40(12, 0.06, 300, 10, 100, 50, 300);
 PID_Regulator_t YawInPID_V40(20, 0, 0, 200, 100, 100, 400);
 PID_Regulator_t YawOutPId_V40(2.3, 0.01, 30, 10, 5, 5, 20);
 
-
-// CURRENT
 PID_Regulator_t RollInPID_V40(2, 0.1, 0, 100, 50, 50, 200);
 PID_Regulator_t RollOutPID_V40(0.5, 0.05, 10, 5, 2.5, 2.5, 10);
-// PID_Regulator_t RollInPID_V40(0.5, /*0.005*/0, /*0.1*/20, 50, 25, 25, 300);
-// PID_Regulator_t RollOutPID_V40(5, /*0.01*/0.5, /*33*/ 0, 5, 2.5, 2.5, 30);
-
-// PID_Regulator_t RollInPID_V40(0.05, 0.0003, 10, 5, 2.5, 2.5, 10);
-// PID_Regulator_t RollOutPID_V40(0.5, 0, 20, 50, 25, 25, 100);
 
 // 水压计pid
 // PID_Regulator_t PitchInPID_V40(5, 0, 0, 100, 50, 50, 200);
@@ -185,22 +178,6 @@ PID_Regulator_t RollOutPID_V40(0.5, 0.05, 10, 5, 2.5, 2.5, 10);
 // IMU
 PID_Regulator_t PitchInPID_V40(2, 0, 40, 100, 50, 50, 200);
 PID_Regulator_t PitchOutPID_V40(7, 0.5, 100, 5, 2.5, 2.5, 10);
-
-// PID_Regulator_t PitchOutPID_V40(3, 0.4, 25, 5, 2.5, 2.5, 10);
-
-// CURRENT
-// PID_Regulator_t PitchInPID_V40(5, 0.3, 0, 50, 25, 25, 100);
-// PID_Regulator_t PitchOutPID_V40(1, 0.1, 15, 5, 2.5, 2.5, 10);
-
-// PID_Regulator_t PitchInPID_V40(8, 0.1, 0, 50, 25, 25, 100);
-// PID_Regulator_t PitchOutPID_V40(1, 0.1, 10, 5, 2.5, 2.5, 10);
-
-//TEST
-// PID_Regulator_t RollInPID_V40(2, 0, 0, 200, 100, 100, 300);
-// PID_Regulator_t RollOutPID_V40(0.5, 0, 10, 5, 2.5, 2.5, 10);
-
-// PID_Regulator_t PitchInPID_V40(5, 0, 0, 50, 25, 25, 100);
-// PID_Regulator_t PitchOutPID_V40(1, 0, 5, 5, 2.5, 2.5, 10);
 
 Propeller_Parameter_t Parameter_V40(InID_V40, OutID_V40, InitPWM_V40, PWM_V40, DepthPID_V40, PitchPID_V40, RollPID_V40, YawPID_V40,
                                     YawInPID_V40, YawOutPId_V40, RollInPID_V40, RollOutPID_V40, PitchInPID_V40, PitchOutPID_V40);
@@ -543,7 +520,6 @@ void Propeller_I2C::float_ctrl()
             if (useFilter)
             {
                 new_roll_diff = PressureSensor::pressure_sensor.data_roll;
-                // new_roll_diff = IMU::imu.attitude.rol;
                 roll_diff = new_roll_diff * (1 - filter_rate) + last_roll_diff * filter_rate;
                 last_roll_diff = new_roll_diff;
             }
@@ -557,8 +533,6 @@ void Propeller_I2C::float_ctrl()
             //     roll_diff = (2 * pi + roll_diff);
 
             targetRollRate = RollOutPID.PIDCalc(0.0, roll_diff);
-
-            // targetRollRate = 0.0f;  // 静止
         }
 
         if (useFilter)
@@ -576,14 +550,8 @@ void Propeller_I2C::float_ctrl()
         else
             Component.Roll = RollInPID.PIDCalc(0.0, roll_vel_diff);
 
-        // 测试：输出roll_diff
-        if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE)
-            // send_float(roll_diff, 2, 0);
-            {
-                // send_float(PressureSensor::pressure_sensor.data_roll, 2, 0);
-                // send_float(IMU::imu.attitude.rol * 180.0 / 3.14, 2, 0);
-                // send_int(data[Parameter.InID[1]], 0);
-            }
+        // 测试输出
+        if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE) {}
 
 
         // 单环PID控制
@@ -631,14 +599,8 @@ void Propeller_I2C::float_ctrl()
         // 单环PID控制
         // Component.Pitch = PitchPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_pitch);
 
-        if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE)
-        {
-            // send_float(IMU::imu.attitude.rol * 180 / 3.14f, 2, 0);
-            // send_float(IMU::imu.attitude.pitch * 180 / 3.14f, 4, 0);
-            // send_int(data[Parameter.InID[3]], 0);
-            // send_float(IMU::imu.attitude.rol, 2, 0);
-            // send_float(roll_diff, 2, 0);
-        }
+        // 测试输出
+        if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE) {}
     }
     else
     {
@@ -646,7 +608,7 @@ void Propeller_I2C::float_ctrl()
         Component.Roll = -150; // 正数向左翻滚,负数向右翻滚
         // Component.Roll = 150;
         // Component.Pitch = PitchPID.PIDCalc(0.0, PressureSensor::pressure_sensor.data_pitch);
-        Component.Pitch = 0;
+        Component.Pitch = 35;
         static int flag_first = 0;
 
         switch (roll_state)
@@ -665,13 +627,22 @@ void Propeller_I2C::float_ctrl()
             {
                 flag_first = 3;
             }
-            if (flag_first == 3 && IMU::imu.attitude.rol < deg2rad(-20) && IMU::imu.attitude.rol > deg2rad(-25))
+            if (flag_first == 3 && IMU::imu.attitude.rol < deg2rad(5) && IMU::imu.attitude.rol > deg2rad(0))
             {
                 uint8_t TxBuffer[5] = {'0', '0', '0', '0', '0'};
                 // HAL_UART_Transmit(&huart6, TxBuffer, sizeof(TxBuffer), 0xffff);
                 roll_state = (roll_state + 1) % roll_state_total;
                 flag_roll = 0;
                 flag_first = 0;
+
+                // 待回到稳定位置后pid接管
+                TCA_SetChannel(4);
+                HAL_Delay(5);
+                PCA_Setpwm(1, 0, floor(Parameter_V40.InitPWM * 4096 / 20000 + 0.5f));
+                PCA_Setpwm(2, 0, floor(Parameter_V40.InitPWM * 4096 / 20000 + 0.5f));
+                PCA_Setpwm(5, 0, floor(Parameter_V40.InitPWM * 4096 / 20000 + 0.5f));
+                PCA_Setpwm(6, 0, floor(Parameter_V40.InitPWM * 4096 / 20000 + 0.5f));
+                HAL_Delay(500);
             }
             break;
             // case 1:
@@ -1001,14 +972,8 @@ void Propeller_I2C::Yaw_ctrl()
     //     }
     // }
 
-    if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE)
-    {
-        // send_int(data[Parameter.OutID[0]], 0);
-        // send_float(Component.Yaw_angle, 2, 0);
-        // send_float(IMU::imu.attitude.yaw * 180.0 / 3.14f, 2, 0);
-        // send_float(angle_diff * 180 / 3.14f, 2, 0);
-        // send_float(targetYawRate, 2, 0);
-    }
+    // 测试输出
+    if (PressureSensor::pressure_sensor.ps_state == PS_HANDLE_STATE::CALCULATE) {}
 
     // if (flag_PWM_output)
     // {
